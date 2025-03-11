@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="MultimodalStudio: A Heterogeneous Sensor Dataset and Framework for Neural Rendering across Multiple Imaging Modalities">
+  <meta name="keywords" content="MultimodalStudio, multimodalstudio, NeRFStudio, nerfstudio, SDFStudio, sdfstudio, MMS, mms, multimodal, cvpr 2025, nerf, dataset, infrared, multispectral, polarization">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MultimodalStudio: A Heterogeneous Sensor Dataset and Framework for Neural Rendering across Multiple Imaging Modalities</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+
+  <!--
+  <link rel="icon" href="./static/images/favicon.svg">
+  -->
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          More Research
+        </a>
+        <div class="navbar-dropdown">
+          <a class="navbar-item" href="https://proceedings.bmvc2023.org/571/">
+            MP-SDF
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title"><span style="font-size: 1.5em;">MultimodalStudio:</span><br> A Heterogeneous Sensor Dataset and Framework for Neural Rendering across Multiple Imaging Modalities</h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://medialab.dei.unipd.it/members/federico-lincetto/">Federico Lincetto</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=Ysz_fQoAAAAJ&hl=en&oi=ao">Gianluca Agresti</a><sup>2</sup>,</span>
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=DA3nSvgAAAAJ&hl=en&oi=ao">Mattia Rossi</a><sup>2</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://medialab.dei.unipd.it/members/pietro-zanuttigh/">Pietro Zanuttigh</a><sup>1</sup>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>University of Padova,</span>
+            <span class="author-block"><sup>2</sup>Sony Europe Limited</span>
+          </div>
+
+          <br/>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">CVPR 2025</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <!-- ArXiv Link. -->
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <!-- Code Link. -->
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code (Coming soon)</span>
+                  </a>
+              </span>
+              <!-- Dataset Link. -->
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="far fa-images"></i>
+                  </span>
+                  <span>Data</span>
+                  </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container ">
+      <h2 class="title has-text-centered is-3">
+        TL;DR
+      </h2>
+      <p class="has-text-justified">
+        We present MultimodalStudio, a project that includes <i>MMS-DATA</i> and <i>MMS-FW</i>. <i>MMS-DATA</i> is a geometrically calibrated multi-view multi-sensor dataset; <i>MMS-FW</i> is a multimodal NeRF framework that supports mosaicked undistorted frames of different modalities. We conducted in depth investigations proving that using multiple imaging modalities improves the novel view rendering quality of each single involved modality.
+      </p>
+    </div>
+  </div>
+</section>
+<br/>
+<br/>
+<br/>
+<section class="hero teaser">
+  <div class="hero-body" style="padding-bottom: 0">
+    <div class="container">
+      <img src="./static/images/teaser2.jpg"
+            class="interpolation-image"
+            alt="MultimodalStudio visual abstract."/>
+      <p class="has-text-centered">
+        Overview of the proposed framework. <i>MMS-FW</i> exploits unaligned multimodal frames acquired by different sensors to render perfectly aligned novel views for each modality.<br/>
+        The mosaick pattern for each modality is shown in the top corners
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Neural Radiance Fields (NeRF) have shown impressive performances in the rendering of 3D scenes from arbitrary viewpoints. While RGB images are widely preferred for training volume rendering models, the interest in other radiance modalities is also growing. However, the capability of the underlying implicit neural models to learn and transfer information across heterogeneous imaging modalities has seldom been explored, mostly due to the limited training data availability.
+          </p>
+          <p>
+            For this purpose, we present <i>MultimodalStudio</i> (MMS): it encompasses <i>MMS-DATA</i> and <i>MMS-FW</i>. <i>MMS-DATA</i> is a multimodal multi-view dataset containing 32 scenes acquired with 5 different imaging modalities: RGB, monochrome, near-infrared, polarization and multispectral. <i>MMS-FW</i> is a novel modular multimodal NeRF framework designed to handle multimodal raw data and able to support an arbitrary number of multi-channel devices.
+          </p>
+          <p>
+            Through extensive experiments, we demonstrate that <i>MMS-FW</i> trained on <i>MMS-DATA</i> can transfer information between different imaging modalities and produce higher quality renderings than using single modalities alone. We publicly release the dataset and the framework, to promote the research on multimodal volume rendering and beyond.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container has-text-centered">
+      <div id="results-carousel" class="carousel results-carousel" style="margin-bottom:1em">
+        <div class="item item-steve">
+          <img src="./static/images/aloe_cc.jpg"
+            class="interpolation-image"
+            alt="Aloe"/>
+        </div>
+        <div class="item item-steve">
+          <img src="./static/images/birdhouse_cc.jpg"
+            class="interpolation-image"
+            alt="Birdhouse"/>
+        </div>
+        <div class="item item-steve">
+          <img src="./static/images/fruits_cc.jpg"
+            class="interpolation-image"
+            alt="Fruits"/>
+        </div>
+        <div class="item item-steve">
+          <img src="./static/images/chess_cc.jpg"
+            class="interpolation-image"
+            alt="Chess"/>
+        </div>
+        <div class="item item-steve">
+          <img src="./static/images/toys_cc.jpg"
+            class="interpolation-image"
+            alt="Toys"/>
+        </div>
+        <div class="item item-steve">
+          <img src="./static/images/steelpot_cc.jpg"
+            class="interpolation-image"
+            alt="Steelpot"/>
+        </div>
+        <div class="item item-steve">
+          <img src="./static/images/glassclock_cc.jpg"
+            class="interpolation-image"
+            alt="Glassclock"/>
+        </div>
+        <div class="item item-steve">
+          <img src="./static/images/fan_cc.jpg"
+            class="interpolation-image"
+            alt="Fan"/>
+        </div>
+      </div>
+    <p>
+      <i>MMS-DATA</i> scenes preview. It consists of <b>32 object-centric scenes</b> acquired with 5 different imaging modalities: <b>RGB</b>, <b>Monochrome (Mono)</b>, <b>Near Infrared (NIR)</b>, <b>Polarization (Pol)</b> and <b>Multispectral (MS)</b>. The objects are made of diffusive, glossy, reflective, and transparent materials, such as plastic, metal, wood, organic, cloth, paper, and glass.
+    </p>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+
+    <!-- Animation. -->
+      <div class="column is-full-width">
+
+        <h2 class="title is-3">Multi-sensor Acquisition Setup</h2>
+        <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
+          <tr>
+            <td width="50%" style="padding: 0.75rem;">
+              <img src="./static/images/rig_2.jpg"
+                   class="interpolation-image"
+                   alt="Multi-sensor acquisition setup."/>
+            </td>
+            <td width="50%" style="padding: 0.75rem;">
+              <div class="content has-text-justified">
+                <p>
+                  The sensors where mounted on a custom-built rig. <br/>
+                  We employed <b>5 different imaging sensors</b>:
+                    <ul>
+                        <li><b>RGB</b>: Basler acA2500-14g</li>
+                        <li><b>Monochrome (Mono)</b>: Basler acA2500-14gm</li>
+                        <li><b>Near-infrared (NIR)</b>: Basler acA1300-60gmNIR</li>
+                        <li><b>Polarization (Pol)</b>:  FLIR BFS-U3-51S5P-C</li>
+                        <li><b>Multispectral (MS)</b>: Silios CMS-C1</li>
+                    </ul>
+                  All the sensors are stereo <b>calibrated</b> with respect to the RGB camera, considered as reference camera.
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 class="title is-3">Framework Architecture</h2>
+        <table class="is-centered has-text-centered is-fullwidth">
+          <tr>
+            <td width="50%" style="padding: 0.75rem;">
+              <img src="./static/images/schema.jpg"
+                   class="interpolation-image"
+                   alt="Multi-sensor acquisition setup."/>
+            </td>
+            <td width="50%" style="padding: 0.75rem;">
+              <div class="content has-text-justified">
+                <p>
+                  We decoupled the <b>density</b> from the <b>radiance</b> estimation by initializing <b>two separate modules</b>. Both the density and the radiance estimations employ <b>implicit representations shared between modalities</b> because they capture overlapping spectral bands, thus share a relevant part of information.<br/>
+                  This architecture allows the model to estimate any channel of any training modality from whatever viewpoint, thus producing <b>perfectly aligned multimodal renderings</b>.
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 class="title is-3">Quantitative Results</h2>
+        <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
+          <tr>
+            <td width="50%" style="padding: 0.75rem;">
+              <img src="./static/images/quantitative_results.jpg"
+                   class="interpolation-image"
+                   alt="Multi-sensor acquisition setup."/>
+            </td>
+            <td width="50%" style="padding: 0.75rem;">
+              <div class="content has-text-justified">
+                <p>
+                  We show in the Table three tests:
+                    <ul>
+                        <li><b>Single-modality</b>: training and test on a single modality.</li>
+                        <li><b>3-modality</b>: training and test on three modalities.</li>
+                        <li><b>5-modality</b>: training and test on all the modalities.</li>
+                    </ul>
+
+                  We observe that the <b>additional modalities always improve the PSNR</b> gain with respect to the single-modality case. We conclude that including frames of other modalities in the training provides complementary information that helps the NeRF to better estimate the multimodal radiance fields.<br/>
+                  For a further analysis, refer to the paper.
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 class="title is-3">Unbalanced Combinations of Modalities</h2>
+        <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
+          <tr>
+            <td width="50%" style="padding: 0.75rem;">
+              <img src="./static/images/unbalanced_modalities.jpg"
+                   class="interpolation-image"
+                   alt="Multi-sensor acquisition setup."/>
+            </td>
+            <td width="50%" style="padding: 0.75rem;">
+              <div class="content has-text-justified">
+                <p>
+                  Let's consider the scenario with an unbalanced number of frames per modality. We trained a 2-modality model with:
+                    <ul>
+                        <li><b>45 RGB</b> frames</li>
+                        <li><b>1</b>, <b>3</b>, <b>5</b>, <b>10</b>, <b>25</b> and <b>45 MS</b> frames</li>
+                    </ul>
+                  The obtained PSNR is plotted as a function of the number of additional modality viewpoints. The results show that the additional modality renderings are always more accurate than the ones obtained by the single-modality training. Moreover, it is sufficient to have more than 5 frames of a second modality to also improve the RGB rendering quality.<br/>
+                  These results show that <b>the model can efficiently transfer information from one modality to another</b>.
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 class="title is-3">Qualitative Results</h2>
+        <div class="content is-centered">
+          <img src="./static/images/qualitative_cropped.png"
+               class="interpolation-image"
+               alt="Multi-sensor acquisition setup."/>
+        </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title is-3">Aligned Multimodal Rendering</h2>
+      <video id="replay-video"
+             controls
+             muted
+             preload
+             playsinline
+             autoplay
+             loop
+             poster
+             width="100%">
+        <source src="./static/videos/video.mp4"
+                type="video/mp4">
+      </video>
+    </div>
+  </div>
+</section>
+
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@article{lincetto2025multimodalstudio,
+  author    = {Lincetto, Federico and Agresti, Gianluca and Rossi, Mattia and Zanuttigh, Pietro},
+  title     = {MultimodalStudio: A Heterogeneous Sensor Dataset and Framework for Neural Rendering across Multiple Imaging Modalities},
+  journal   = {CVPR},
+  year      = {2025},
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+
+            <p>
+              This collaborative work was funded by Sony Europe Limited.<br/>
+              We warmly thank Piergiorgio Sartor for his brilliant supervision, Francesco Michielin for his help with sensor calibration, and Oliver Erdler, Yalcin Incesu, and Alexander Gatto for their support.
+            </p>
+
+            <p>
+              This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+            </p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+<script>
+  $(window).on('load', function() {
+    bulmaCarousel.attach('#results-carousel', {
+      slidesToScroll: 1,
+      slidesToShow: 3,
+      loop: true,
+      autoplay: true,
+    });
+  });
+</script>
+
+</body>
+</html>
