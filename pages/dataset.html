@@ -47,6 +47,9 @@
           More Research
         </a>
         <div class="navbar-dropdown">
+          <a class="navbar-item" href="https://lttm.github.io/MultimodalStudio/">
+            MultimodalStudio
+          </a>
           <a class="navbar-item" href="https://proceedings.bmvc2023.org/571/">
             MP-SDF
           </a>
@@ -59,11 +62,28 @@
 
 
 <section class="hero is-small">
-  <div class="hero-body">
+  <div class="hero-body" style="padding-bottom: 2.5rem;">
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column has-text-centered">
           <h1 class="title is-1 publication-title"><span style="font-size: 1.5em;">MMS-DATA:</span><br>A Multimodal Multi-view Dataset</h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://medialab.dei.unipd.it/members/federico-lincetto/">Federico Lincetto</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=Ysz_fQoAAAAJ&hl=en&oi=ao">Gianluca Agresti</a><sup>2</sup>,</span>
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=DA3nSvgAAAAJ&hl=en&oi=ao">Mattia Rossi</a><sup>2</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://medialab.dei.unipd.it/members/pietro-zanuttigh/">Pietro Zanuttigh</a><sup>1</sup>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup><a href="https://medialab.dei.unipd.it/">Media Lab</a> - University of Padova,</span>
+            <span class="author-block"><sup>2</sup>Sony Europe B.V.</span>
+          </div>
         </div>
       </div>
     </div>
@@ -78,22 +98,22 @@
           <h2 class="title has-text-centered is-3">
             Overview
           </h2>
-          <div class="content">
-            <p class="has-text-justified">
-              MMS-DATA is a multimodal multi-view calibrated dataset published along with MultimodalStudio.</br>
+          <div class="content has-text-justified">
+            <p>
+              <i>MMS-DATA</i> is a <b>multimodal multi-view calibrated dataset</b> published along with <a style="color: hsl(204, 86%, 53%)" href="https://lttm.github.io/MultimodalStudio/">MultimodalStudio</a>.<br>
               It is captured with 5 different imaging modalities:
-
-              <ul>
-                  <li>RGB</li>
-                  <li>Near-Infrared (NIR)</li>
-                  <li>Monochrome (Mono)</li>
-                  <li>Polarization (Pol)</li>
-                  <li>Multisepectral (MS)</li>
-              </ul>
-
-              MMS-DATA includes 32 object centric scenes, with 50 viewpoints per scene. The subjects are common objects made from a variety of materials.
-              The sensor poses are accurately calibrated.</br>
-              Refer to the paper and to the supplementary material for more details on the dataset and the calibration procedure.
+            </p>
+            <ul>
+              <li><b>RGB</b></li>
+              <li><b>Monochrome (Mono)</b></li>
+              <li><b>Near-infrared (NIR)</b></li>
+              <li><b>Polarization (Pol)</b></li>
+              <li><b>Multispectral (MS)</b></li>
+            </ul>
+            <p>
+              <i>MMS-DATA</i> includes <b>32 object-centric scenes</b>, with <b>50 viewpoints per scene</b>. The sensor poses are accurately <b>geometrically calibrated</b>.
+              The subjects are common objects made from <b>diffusive</b>, <b>glossy</b>, <b>reflective</b>, and <b>transparent materials</b>, such as plastic, metal, wood, organic, cloth, paper, and glass.
+              Refer to the paper and to the supplementary material for more details about the dataset and the calibration procedure.
             </p>
           </div>
         </div>
@@ -101,51 +121,125 @@
     </div>
   </div>
 </section>
-<br/>
-<br/>
-<br/>
+<br>
+<br>
 <section class="hero teaser">
-  <div class="hero-body" style="padding-bottom: 0">
-    <div class="container">
-      <img src="../static/images/teaser2.jpg"
-            class="interpolation-image"
-            alt="MultimodalStudio visual abstract."/>
-      <p class="has-text-centered">
-        Overview of the proposed framework. <i>MMS-FW</i> exploits unaligned multimodal frames acquired by different sensors to render perfectly aligned novel views for each modality.<br/>
-        The mosaick pattern for each modality is shown in the top corners
-      </p>
-    </div>
-  </div>
-</section>
-
-
-<section class="section">
-  <div class="container is-max-desktop">
-    <!-- Abstract. -->
-    <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
-        <h2 class="title is-3">Abstract</h2>
-        <div class="content has-text-justified">
-          <p>
-            Neural Radiance Fields (NeRF) have shown impressive performances in the rendering of 3D scenes from arbitrary viewpoints. While RGB images are widely preferred for training volume rendering models, the interest in other radiance modalities is also growing. However, the capability of the underlying implicit neural models to learn and transfer information across heterogeneous imaging modalities has seldom been explored, mostly due to the limited training data availability.
-          </p>
-          <p>
-            For this purpose, we present <i>MultimodalStudio</i> (MMS): it encompasses <i>MMS-DATA</i> and <i>MMS-FW</i>. <i>MMS-DATA</i> is a multimodal multi-view dataset containing 32 scenes acquired with 5 different imaging modalities: RGB, monochrome, near-infrared, polarization and multispectral. <i>MMS-FW</i> is a novel modular multimodal NeRF framework designed to handle multimodal raw data and able to support an arbitrary number of multi-channel devices.
-          </p>
-          <p>
-            Through extensive experiments, we demonstrate that <i>MMS-FW</i> trained on <i>MMS-DATA</i> can transfer information between different imaging modalities and produce higher quality renderings than using single modalities alone. We publicly release the dataset and the framework, to promote the research on multimodal volume rendering and beyond.
-          </p>
+  <div class="hero-body is-max-desktop">
+    <div class="container is-centered">
+      <div class="columns is-centered">
+        <div class="column">
+          <div class="content">
+            <div class="content has-text-centered">
+              <h2 class="title is-3">Source Data</h2>
+            </div>
+            <div class="publication-links has-text-centered" style="margin-bottom: 2.5rem">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href=""
+                    class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-download"></i>
+                  </span>
+                  <span>Download</span>
+                </a>
+              </span>
+            </div>
+            <div class="content has-text-justified">
+              <p>
+                This version of <i>MMS-DATA</i> includes:
+              </p>
+              <ul>
+                <li>the original RAW frames for every modality</li>
+                <li>the geometrical camera calibration of all sensors</li>
+                <li>the frames used for the camera calibration</li>
+                <li>few frames of a color checker</li>
+              </ul>
+              <p>
+                All the frames are RAW, thus they are mosaicked and they did not receive any processing or color correction.
+                This version does <b>NOT</b> include the camera poses of every frame.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="content">
+            <div class="content has-text-centered">
+              <h2 class="title is-3">Processed Raw Data</h2>
+            </div>
+            <div class="publication-links has-text-centered" style="margin-bottom: 2.5rem">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href=""
+                    class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-download"></i>
+                  </span>
+                  <span>Download</span>
+                </a>
+              </span>
+            </div>
+            <div class="content has-text-justified">
+              <p>
+                Each scene of this version of <i>MMS-DATA</i> includes:
+              </p>
+              <ul>
+                <li>the processed mosaicked frames</li>
+                <li>the metadata of each scene, including camera poses</li>
+                <li>a sparse point cloud of the scene</li>
+                <li>a point cloud of all the camera positions</li>
+              </ul>
+              <p>
+                All the frames are mosaicked, distorted, and they did not receive any color correction.
+                This archive contains the camera pose for all frames of every scene.<br>
+                The scenes in this archive are <b>ready-to-use</b> to run MultimodalStudio.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="content">
+            <div class="content has-text-centered">
+              <h2 class="title is-3">Processed Undistorted Data</h2>
+            </div>
+            <div class="publication-links has-text-centered" style="margin-bottom: 2.5rem">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href=""
+                    class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-download"></i>
+                  </span>
+                  <span>Download</span>
+                </a>
+              </span>
+            </div>
+            <div class="content has-text-justified">
+              <p>
+                Each scene of this version of <i>MMS-DATA</i> includes:
+              </p>
+              <ul>
+                <li>the demosaicked and undistorted frames</li>
+                <li>the metadata of each scene, including camera poses</li>
+                <li>a sparse point cloud of the scene</li>
+                <li>a point cloud of all the camera positions</li>
+              </ul>
+              <p>
+                All the frames are demosaicked, undistorted, and they did not receive any color correction.
+                This archive contains the camera pose for all frames of every scene.<br>
+                The scenes in this archive are <b>ready-to-use</b> to run MultimodalStudio.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-
 <section class="hero is-light is-small">
   <div class="hero-body">
     <div class="container has-text-centered">
-      <div id="results-carousel" class="carousel results-carousel" style="margin-bottom:1em">
+      <div id="results-carousel" class="carousel results-carousel">
         <div class="item item-steve">
           <img src="../static/images/aloe_cc.jpg"
             class="interpolation-image"
@@ -187,9 +281,11 @@
             alt="Fan"/>
         </div>
       </div>
+    <!--
     <p>
       <i>MMS-DATA</i> scenes preview. It consists of <b>32 object-centric scenes</b> acquired with 5 different imaging modalities: <b>RGB</b>, <b>Monochrome (Mono)</b>, <b>Near Infrared (NIR)</b>, <b>Polarization (Pol)</b> and <b>Multispectral (MS)</b>. The objects are made of diffusive, glossy, reflective, and transparent materials, such as plastic, metal, wood, organic, cloth, paper, and glass.
     </p>
+    -->
     </div>
   </div>
 </section>
@@ -228,80 +324,52 @@
           </tr>
         </table>
 
-        <h2 class="title is-3">Framework Architecture</h2>
+        <h2 class="title is-3">Calibration Results</h2>
         <table class="is-centered has-text-centered is-fullwidth">
           <tr>
             <td width="50%" style="padding: 0.75rem;">
-              <img src="../static/images/schema.jpg"
+              <img src="../static/images/rmse_calibration.jpg"
                    class="interpolation-image"
-                   alt="Multi-sensor acquisition setup."/>
+                   alt="Calibration RMSE."/>
             </td>
             <td width="50%" style="padding: 0.75rem;">
               <div class="content has-text-justified">
                 <p>
-                  We decoupled the <b>density</b> from the <b>radiance</b> estimation by initializing <b>two separate modules</b>. Both the density and the radiance estimations employ <b>implicit representations shared between modalities</b> because they capture overlapping spectral bands, thus share a relevant part of information.<br/>
-                  This architecture allows the model to estimate any channel of any training modality from whatever viewpoint, thus producing <b>perfectly aligned multimodal renderings</b>.
-              </div>
-            </td>
-          </tr>
-        </table>
-
-        <h2 class="title is-3">Quantitative Results</h2>
-        <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
-          <tr>
-            <td width="50%" style="padding: 0.75rem;">
-              <img src="../static/images/quantitative_results.jpg"
-                   class="interpolation-image"
-                   alt="Multi-sensor acquisition setup."/>
-            </td>
-            <td width="50%" style="padding: 0.75rem;">
-              <div class="content has-text-justified">
+                  The calibration process involves two steps:
+                </p>
+                <ul>
+                  <li> the <b>intrinsics</b> calibration,</li>
+                  <li>the <b>joint pose calibration</b> of the different sensors</li>
+                </ul>
                 <p>
-                  We show in the Table three tests:
-                    <ul>
-                        <li><b>Single-modality</b>: training and test on a single modality.</li>
-                        <li><b>3-modality</b>: training and test on three modalities.</li>
-                        <li><b>5-modality</b>: training and test on all the modalities.</li>
-                    </ul>
-
-                  We observe that the <b>additional modalities always improve the PSNR</b> gain with respect to the single-modality case. We conclude that including frames of other modalities in the training provides complementary information that helps the NeRF to better estimate the multimodal radiance fields.<br/>
-                  For a further analysis, refer to the paper.
+                  We calibrated the camera extrinsics assuming a <b>star topology</b>. The RGB sensor is selected as the reference camera,
+                  and all the other sensors are stereo calibrated with respect to it.
                 </p>
               </div>
             </td>
           </tr>
         </table>
 
-        <h2 class="title is-3">Unbalanced Combinations of Modalities</h2>
+        <h2 class="title is-3">Acquisition Procedure</h2>
         <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
           <tr>
             <td width="50%" style="padding: 0.75rem;">
-              <img src="../static/images/unbalanced_modalities.jpg"
+              <img src="../static/images/acquisition_procedure.jpg"
                    class="interpolation-image"
-                   alt="Multi-sensor acquisition setup."/>
+                   alt="Acquisition procedure."/>
             </td>
             <td width="50%" style="padding: 0.75rem;">
               <div class="content has-text-justified">
                 <p>
-                  Let's consider the scenario with an unbalanced number of frames per modality. We trained a 2-modality model with:
-                    <ul>
-                        <li><b>45 RGB</b> frames</li>
-                        <li><b>1</b>, <b>3</b>, <b>5</b>, <b>10</b>, <b>25</b> and <b>45 MS</b> frames</li>
-                    </ul>
-                  The obtained PSNR is plotted as a function of the number of additional modality viewpoints. The results show that the additional modality renderings are always more accurate than the ones obtained by the single-modality training. Moreover, it is sufficient to have more than 5 frames of a second modality to also improve the RGB rendering quality.<br/>
-                  These results show that <b>the model can efficiently transfer information from one modality to another</b>.
+                  The acquisitions were performed by moving the rig all around the target object placed on the table and by capturing data from <b>all modalities at each viewpoint</b>.
+                  The rig was moved manually, therefore the sensor positions are different from scene to scene.<br>
+                  The pictures have been acquired by moving the camera rig around the object in <b>2 circular patterns</b>, a lower one and an upper one.
                 </p>
               </div>
             </td>
           </tr>
         </table>
 
-        <h2 class="title is-3">Qualitative Example</h2>
-        <div class="content is-centered">
-          <img src="../static/images/qualitative_cropped.png"
-               class="interpolation-image"
-               alt="Multi-sensor acquisition setup."/>
-        </div>
     </div>
   </div>
 </section>
@@ -309,19 +377,15 @@
 <section class="hero is-light is-small">
   <div class="hero-body">
     <div class="container">
-      <h2 class="title is-3">Aligned Multimodal Rendering</h2>
-      <video id="replay-video"
-             controls
-             muted
-             preload
-             playsinline
-             autoplay
-             loop
-             poster
-             width="100%">
-        <source src="../static/videos/video.mp4"
-                type="video/mp4">
-      </video>
+      <h2 class="title is-3">Materials per scene</h2>
+      <img src="../static/images/material_table.jpg"
+               class="interpolation-image"
+               alt="Table of materials per scene."/>
+      <div class="content has-text-centered">
+        <p>
+          Table of materials per scene. Each scene contains objects made from materials with different properties.
+        </p>
+      </div>
     </div>
   </div>
 </section>
