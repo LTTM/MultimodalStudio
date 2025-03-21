@@ -3,31 +3,31 @@
 <head>
   <meta charset="utf-8">
   <meta name="description"
-        content="MultimodalStudio: A Heterogeneous Sensor Dataset and Framework for Neural Rendering across Multiple Imaging Modalities">
+        content="MMS-DATA: A Multimodal Multi-view Dataset">
   <meta name="keywords" content="MultimodalStudio, multimodalstudio, NeRFStudio, nerfstudio, SDFStudio, sdfstudio, MMS, mms, multimodal, cvpr 2025, nerf, dataset, infrared, multispectral, polarization">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MultimodalStudio: A Heterogeneous Sensor Dataset and Framework for Neural Rendering across Multiple Imaging Modalities</title>
+  <title>MMS-DATA: A Multimodal Multi-view Dataset</title>
 
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
         rel="stylesheet">
 
-  <link rel="stylesheet" href="./static/css/bulma.min.css">
-  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
-  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
-  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="../static/css/bulma.min.css">
+  <link rel="stylesheet" href="../static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="../static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="../static/css/fontawesome.all.min.css">
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
-  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="stylesheet" href="../static/css/index.css">
 
   <!--
-  <link rel="icon" href="./static/images/favicon.svg">
+  <link rel="icon" href="../static/images/favicon.svg">
   -->
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script defer src="./static/js/fontawesome.all.min.js"></script>
-  <script src="./static/js/bulma-carousel.min.js"></script>
-  <script src="./static/js/bulma-slider.min.js"></script>
-  <script src="./static/js/index.js"></script>
+  <script defer src="../static/js/fontawesome.all.min.js"></script>
+  <script src="../static/js/bulma-carousel.min.js"></script>
+  <script src="../static/js/bulma-slider.min.js"></script>
+  <script src="../static/js/index.js"></script>
 </head>
 <body>
 
@@ -63,75 +63,7 @@
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column has-text-centered">
-          <h1 class="title is-1 publication-title"><span style="font-size: 1.5em;">MultimodalStudio:</span><br> A Heterogeneous Sensor Dataset and Framework for Neural Rendering across Multiple Imaging Modalities</h1>
-          <div class="is-size-5 publication-authors">
-            <span class="author-block">
-              <a href="https://medialab.dei.unipd.it/members/federico-lincetto/">Federico Lincetto</a><sup>1</sup>,</span>
-            <span class="author-block">
-              <a href="https://scholar.google.com/citations?user=Ysz_fQoAAAAJ&hl=en&oi=ao">Gianluca Agresti</a><sup>2</sup>,</span>
-            <span class="author-block">
-              <a href="https://scholar.google.com/citations?user=DA3nSvgAAAAJ&hl=en&oi=ao">Mattia Rossi</a><sup>2</sup>,
-            </span>
-            <span class="author-block">
-              <a href="https://medialab.dei.unipd.it/members/pietro-zanuttigh/">Pietro Zanuttigh</a><sup>1</sup>
-            </span>
-          </div>
-
-          <div class="is-size-5 publication-authors">
-            <span class="author-block"><sup>1</sup><a href="https://medialab.dei.unipd.it/">Media Lab</a> - University of Padova,</span>
-            <span class="author-block"><sup>2</sup>Sony Europe B.V.</span>
-          </div>
-
-          <br/>
-
-          <div class="is-size-5 publication-authors">
-            <span class="author-block">CVPR 2025</span>
-          </div>
-
-          <div class="column has-text-centered">
-            <div class="publication-links">
-              <!-- PDF Link. -->
-              <span class="link-block">
-                <a href=""
-                   class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon">
-                      <i class="fas fa-file-pdf"></i>
-                  </span>
-                  <span>Paper</span>
-                </a>
-              </span>
-              <!-- ArXiv Link. -->
-              <span class="link-block">
-                <a href=""
-                   class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon">
-                      <i class="ai ai-arxiv"></i>
-                  </span>
-                  <span>arXiv</span>
-                </a>
-              </span>
-              <!-- Code Link. -->
-              <span class="link-block">
-                <a href=""
-                   class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon">
-                      <i class="fab fa-github"></i>
-                  </span>
-                  <span>Code (Coming soon)</span>
-                  </a>
-              </span>
-              <!-- Dataset Link. -->
-              <span class="link-block">
-                <a href=""
-                   class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon">
-                      <i class="far fa-images"></i>
-                  </span>
-                  <span>Data</span>
-                  </a>
-              </span>
-            </div>
-          </div>
+          <h1 class="title is-1 publication-title"><span style="font-size: 1.5em;">MMS-DATA:</span><br>A Multimodal Multi-view Dataset</h1>
         </div>
       </div>
     </div>
@@ -140,13 +72,32 @@
 
 <section class="hero is-light is-small">
   <div class="hero-body">
-    <div class="container ">
-      <h2 class="title has-text-centered is-3">
-        TL;DR
-      </h2>
-      <p class="has-text-justified">
-        We present MultimodalStudio, a project that includes <i>MMS-DATA</i> and <i>MMS-FW</i>. <i>MMS-DATA</i> is a geometrically calibrated multi-view multi-sensor dataset; <i>MMS-FW</i> is a multimodal NeRF framework that supports mosaicked, demosaicked, distorted, and undistorted frames of different modalities. We conducted in depth investigations proving that using multiple imaging modalities improves the novel view rendering quality of each single involved modality.
-      </p>
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title has-text-centered is-3">
+            Overview
+          </h2>
+          <div class="content">
+            <p class="has-text-justified">
+              MMS-DATA is a multimodal multi-view calibrated dataset published along with MultimodalStudio.</br>
+              It is captured with 5 different imaging modalities:
+
+              <ul>
+                  <li>RGB</li>
+                  <li>Near-Infrared (NIR)</li>
+                  <li>Monochrome (Mono)</li>
+                  <li>Polarization (Pol)</li>
+                  <li>Multisepectral (MS)</li>
+              </ul>
+
+              MMS-DATA includes 32 object centric scenes, with 50 viewpoints per scene. The subjects are common objects made from a variety of materials.
+              The sensor poses are accurately calibrated.</br>
+              Refer to the paper and to the supplementary material for more details on the dataset and the calibration procedure.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -156,7 +107,7 @@
 <section class="hero teaser">
   <div class="hero-body" style="padding-bottom: 0">
     <div class="container">
-      <img src="./static/images/teaser2.jpg"
+      <img src="../static/images/teaser2.jpg"
             class="interpolation-image"
             alt="MultimodalStudio visual abstract."/>
       <p class="has-text-centered">
@@ -196,42 +147,42 @@
     <div class="container has-text-centered">
       <div id="results-carousel" class="carousel results-carousel" style="margin-bottom:1em">
         <div class="item item-steve">
-          <img src="./static/images/aloe_cc.jpg"
+          <img src="../static/images/aloe_cc.jpg"
             class="interpolation-image"
             alt="Aloe"/>
         </div>
         <div class="item item-steve">
-          <img src="./static/images/birdhouse_cc.jpg"
+          <img src="../static/images/birdhouse_cc.jpg"
             class="interpolation-image"
             alt="Birdhouse"/>
         </div>
         <div class="item item-steve">
-          <img src="./static/images/fruits_cc.jpg"
+          <img src="../static/images/fruits_cc.jpg"
             class="interpolation-image"
             alt="Fruits"/>
         </div>
         <div class="item item-steve">
-          <img src="./static/images/chess_cc.jpg"
+          <img src="../static/images/chess_cc.jpg"
             class="interpolation-image"
             alt="Chess"/>
         </div>
         <div class="item item-steve">
-          <img src="./static/images/toys_cc.jpg"
+          <img src="../static/images/toys_cc.jpg"
             class="interpolation-image"
             alt="Toys"/>
         </div>
         <div class="item item-steve">
-          <img src="./static/images/steelpot_cc.jpg"
+          <img src="../static/images/steelpot_cc.jpg"
             class="interpolation-image"
             alt="Steelpot"/>
         </div>
         <div class="item item-steve">
-          <img src="./static/images/glassclock_cc.jpg"
+          <img src="../static/images/glassclock_cc.jpg"
             class="interpolation-image"
             alt="Glassclock"/>
         </div>
         <div class="item item-steve">
-          <img src="./static/images/fan_cc.jpg"
+          <img src="../static/images/fan_cc.jpg"
             class="interpolation-image"
             alt="Fan"/>
         </div>
@@ -254,7 +205,7 @@
         <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
           <tr>
             <td width="50%" style="padding: 0.75rem;">
-              <img src="./static/images/rig_2.jpg"
+              <img src="../static/images/rig_2.jpg"
                    class="interpolation-image"
                    alt="Multi-sensor acquisition setup."/>
             </td>
@@ -281,7 +232,7 @@
         <table class="is-centered has-text-centered is-fullwidth">
           <tr>
             <td width="50%" style="padding: 0.75rem;">
-              <img src="./static/images/schema.jpg"
+              <img src="../static/images/schema.jpg"
                    class="interpolation-image"
                    alt="Multi-sensor acquisition setup."/>
             </td>
@@ -299,7 +250,7 @@
         <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
           <tr>
             <td width="50%" style="padding: 0.75rem;">
-              <img src="./static/images/quantitative_results.jpg"
+              <img src="../static/images/quantitative_results.jpg"
                    class="interpolation-image"
                    alt="Multi-sensor acquisition setup."/>
             </td>
@@ -325,7 +276,7 @@
         <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
           <tr>
             <td width="50%" style="padding: 0.75rem;">
-              <img src="./static/images/unbalanced_modalities.jpg"
+              <img src="../static/images/unbalanced_modalities.jpg"
                    class="interpolation-image"
                    alt="Multi-sensor acquisition setup."/>
             </td>
@@ -347,7 +298,7 @@
 
         <h2 class="title is-3">Qualitative Example</h2>
         <div class="content is-centered">
-          <img src="./static/images/qualitative_cropped.png"
+          <img src="../static/images/qualitative_cropped.png"
                class="interpolation-image"
                alt="Multi-sensor acquisition setup."/>
         </div>
@@ -368,7 +319,7 @@
              loop
              poster
              width="100%">
-        <source src="./static/videos/video.mp4"
+        <source src="../static/videos/video.mp4"
                 type="video/mp4">
       </video>
     </div>
