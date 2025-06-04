@@ -1,0 +1,24 @@
+name: multimodalstudio
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip=23.0.1
+  - colmap
+  - pip:
+    - h5py
+    - lightning
+    - lpips
+    - matplotlib
+    - opencv-python
+    - polanalyser
+    - scikit-image
+    - scipy
+    - tensorboard
+    - torch
+    - torchmetrics
+    - torchtyping
+    - torchvision
+    - trimesh
+    - tyro
+

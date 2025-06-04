@@ -1,0 +1,287 @@
+# Copyright 2025 Sony Group Corporation.
+# All rights reserved.
+#
+# Licenced under the License reported at
+#
+#     https://github.com/LTTM/MultimodalStudio/LICENSE.txt (the "License").
+#
+# See the License for the specific language governing permissions and limitations under the License.
+#
+# Author: Federico Lincetto, Ph.D. Student at the University of Padova
+
+---
+
+# Name of the method configuration to use (must match a key in method_configs.py)
+method: grid_raw  # e.g., grid, mlp, grid_raw, mlp_raw, grid_unbalanced, etc.
+
+# Number of GPUs to use for training
+n_gpu: 1
+
+# Enable mixed precision training (True/False)
+mixed_precision: True
+
+# Matrix multiplication precision: highest, high, or medium
+matmul_precision: high
+
+# Maximum number of training iterations
+max_num_iterations: 100000
+
+# Number of steps between evaluation on a random batch of rays
+steps_per_eval_batch: 200
+
+# Number of steps between evaluation on a single image
+steps_per_eval_image: 5000
+
+# Number of steps between evaluation on all images
+steps_per_eval_all_images: 50000
+
+# Number of steps between mesh export
+steps_per_export_mesh: 50000
+
+# Number of steps between pose export
+steps_per_export_poses: 10000
+
+# Number of steps between saving checkpoints
+steps_per_save: 5000
+
+# If True, only the latest checkpoint is kept (older ones are deleted)
+save_only_latest_checkpoint: True
+
+# Optionally specify a pre-trained model directory to load from (string or null)
+load_dir: path/to/pretrained/model
+
+# Optionally specify model step to load from; if none, will find most recent model in load_dir
+load_step: 100000
+
+# Visualizer to use: "wandb" or "tensorboard"
+vis: tensorboard
+
+pipeline:
+  evaluator:
+    # Number of rays per chunk during evaluation
+    eval_num_rays_per_chunk: 2048
+    # Downscale factor for rendering during evaluation (e.g., 0.25 = quarter resolution)
+    rendering_scale: 0.25
+    # Whether to export mesh during evaluation
+    export_mesh: True
+    mesh_extractor:
+      # Whether to use ground-truth scale for mesh extraction
+      gt_scale: False
+      # Threshold for marching cubes (float)
+      marching_cube_threshold: 0.0
+    # Whether to export camera poses during evaluation
+    export_poses: True
+    pose_extractor:
+      # Whether to use ground-truth scale for pose extraction
+      gt_scale: False
+      # Colors for each modality in pose visualization
+      colors:
+        rgb: green
+        infrared: red
+        multispectral: blue
+        mono: black
+        polarization: magenta
+
+  datamanager:
+    # List of modalities to use (choose from: rgb, infrared, mono, polarization, multispectral)
+    modalities:
+      - rgb
+      - infrared
+      - mono
+      - polarization
+      - multispectral
+
+    # Indices of images to use for evaluation (global, for all modalities)
+    eval_image_indices: [9, 19, 29, 39, 49]
+    # Indices of images to use for evaluation, per modality (overrides eval_image_indices if set)
+    # eval_image_indices_per_modality:
+    #   rgb: [0, 1, 2]
+    #   polarization: [0, 1, 2]
+
+    # Indices of images to skip (global, for all modalities)
+    # skip_image_indices: []
+    # Indices of images to skip, per modality
+    # skip_image_indices_per_modality:
+    #   polarization: [0, 1, 2]
+
+    camera_optimizer:
+      # Camera optimization mode: "off", "SO3", "SO3xR3", etc.
+      mode: 'SO3xR3'
+      # Whether to share optimization across views of the same modality
+      shared_optimization: True
+      # Which modalities to optimize camera poses for
+      modalities_to_optimize:
+        rgb: True
+        infrared: True
+        mono: True
+        polarization: True
+        multispectral: True
+
+    pixel_sampler:
+      # Number of rays to sample per modality per iteration
+      num_rays_per_modality: 2048
+
+  model:
+    ray_sampler:
+      # Number of coarse samples per ray
+      num_samples: 32
+      # Number of fine samples per ray (importance sampling)
+      num_samples_importance: 32
+
+    background_ray_sampler:
+      # Number of samples for background rays
+      num_samples: 16
+
+    surface_model:
+      # Whether to use numerical gradients for surface field
+      use_numerical_gradients: True
+      # Number of taps for numerical gradient computation
+      numerical_gradient_taps: 4
+      surface_field:
+        field:
+          # Feature grid configuration (for grid-based fields)
+          feature_grid:
+            encoding:
+              # Maximum resolution for hash encoding
+              max_res: 1024
+            # Whether to use coarse-to-fine grid training
+            coarse_to_fine: True
+            # Grid radius (float)
+            radius: 1.0
+          # MLP head configuration
+          mlp_head:
+            # Number of hidden units in the MLP head
+            hidden_dim: 256
+            # Whether to use geometric initialization
+            geometric_init: True
+            # Whether to use weight normalization
+            weight_norm: True
+            # Bias for geometric initialization
+            geometric_init_bias: 0.4
+            # Number of layers in the MLP head
+            num_layers: 3
+            # Activation function (e.g., "Softplus", "ReLU")
+            activation: Softplus
+            # Activation parameters (dictionary)
+            activation_params:
+              beta: 100
+            # Output activation function (e.g., "None", "ReLU", "Sigmoid")
+            out_activation: None
+        # Whether to use positional encoding for the surface field
+        use_position_encoding: True
+        # Positional encoding configuration
+        position_encoding:
+          num_frequencies: 6
+          min_freq_exp: 0.0
+          max_freq_exp: 5
+          include_input: True
+
+    radiance_model:
+      radiance_field:
+        base_field:
+          # Feature grid configuration (for grid-based fields)
+          feature_grid:
+            encoding:
+              max_res: 1024
+            coarse_to_fine: True
+            radius: 1.0
+          # MLP head configuration
+          mlp_head:
+            hidden_dim: 256
+            weight_norm: True
+            num_layers: 3
+            activation: ReLU
+            out_activation: ReLU
+      # Whether to use direction encoding for radiance field
+      use_direction_encoding: True
+      direction_encoding:
+        # Spherical harmonics degree for direction encoding
+        degree: 4
+      # Whether to use reflection direction in radiance computation
+      use_reflection_direction: False
+      # Whether to use n·v (normal dot view_dir) in radiance computation
+      use_n_dot_v: True
+      # Radiance feature dimension
+      radiance_feature_dim: 256
+      # Modality heads configuration (per modality)
+      modality_heads:
+        rgb:
+          field:
+            num_layers: 3
+            hidden_dim: 64
+            out_activation: Sigmoid
+            weight_norm: True
+        infrared:
+          field:
+            num_layers: 3
+            hidden_dim: 64
+            out_activation: Sigmoid
+            weight_norm: True
+        mono:
+          field:
+            num_layers: 3
+            hidden_dim: 64
+            out_activation: Sigmoid
+            weight_norm: True
+        polarization:
+          field:
+            num_layers: 3
+            hidden_dim: 256
+            out_activation: None
+            weight_norm: True
+        multispectral:
+          field:
+            num_layers: 3
+            hidden_dim: 64
+            out_activation: Sigmoid
+            weight_norm: True
+
+    background_model:
+      background_field:
+        base_field:
+          # Output dimension of the background base field
+          output_dim: 256
+          # Whether to use weight normalization
+          weight_norm: True
+        head_field:
+          # Number of hidden units in the head field
+          hidden_dim: 256
+          # Whether to use weight normalization
+          weight_norm: True
+      # Radiance feature dimension for background
+      radiance_feature_dim: 128
+      # Modality heads for background (per modality)
+      modality_heads:
+        polarization:
+          # Configuration for polarization head (if needed)
+          # ...
+
+      # Spatial distortion configuration
+      spatial_distortion:
+        order: inf
+
+logging:
+  # Number of steps between logging stats
+  steps_per_log: 100
+  # Number of steps between flushing buffer to disk
+  steps_per_flush_buffer: 100
+  # Maximum buffer size for running averages
+  max_buffer_size: 20
+  local_writer:
+    # Enable local logging
+    enable: True
+    # Maximum number of rows to print before wrapping
+    max_log_size: 10
+    # Stats to track (list of event names)
+    stats_to_track:
+      - ITER_TRAIN_TIME
+      - TRAIN_RAYS_PER_SEC
+      - CURR_TEST_PSNR
+      - VIS_RAYS_PER_SEC
+      - TEST_RAYS_PER_SEC
+  # Enable profiler (True/False)
+  enable_profiler: False
+  # Profiler type: none, basic, pytorch
+  profiler: basic
+
+...
