@@ -223,11 +223,26 @@ Edit the script to set the correct paths for:
 
 The script will compute PSNR, SSIM, and LPIPS metrics for each modality and print average results.
 
+## Reproducing Paper Results
+
+To reproduce the results reported in the MultimodalStudio paper, you can train the framework on all the scenes employing the method configurations provided in `src/configs/method_configs.py`, the config files in `confs/`, and using the data provided in the [Dataset page](https://lttm.github.io/MultimodalStudio/pages/dataset.html).
+
+Below we report the average PSNR and SSIM metrics (over all scenes) for a 5-modality training, obtained by training with raw frames and multiresolution hash grid models:
+
+| Modality      | PSNR (↑) | SSIM (↑) |
+|---------------|----------|----------|
+| RGB           | 32.45    | -        |
+| Mono          | 32.75    | 0.94     |
+| NIR           | 34.06    | 0.93     |
+| Polarization  | 30.91    | -        |
+| Multispectral | 31.27    | -        |
+
+**Note:**  
+These results are slightly better than those reported in the paper. This is because, for these experiments, we used an MLP to estimate the background instead of a multiresolution hash grid (to save memory space), and we employed slightly deeper modality heads. All other settings match the original paper.
+
 ---
 
 For more details, refer to the comments in each script and the documentation in the repository.
-
----
 
 ## Citation
 
@@ -247,6 +262,6 @@ If you use this code or dataset, please cite:
 This project was funded by Sony Eurpoe Limited.
 
 
-This project was inspired by [NeRFStudio](https://nerf.studio/) and [SDFStudio](https://github.com/autonomousvision/sdfstudio).
-Moreover, [tiny-cuda-nn](https://github.com/NVlabs/tiny-cuda-nn) and [polanalyser](https://github.com/elerac/polanalyser) are used in this project.
+This project was inspired by [NeRFStudio](https://nerf.studio/) and [SDFStudio](https://github.com/autonomousvision/sdfstudio).  
+Moreover, [tiny-cuda-nn](https://github.com/NVlabs/tiny-cuda-nn) and [polanalyser](https://github.com/elerac/polanalyser) are used in this project.  
 We thank their authors for their contributions to the field and for providing excellent resources for the community.
