@@ -259,7 +259,7 @@ If you use this code or dataset, please cite:
 
 ## Acknowledgments
 
-This project was funded by Sony Eurpoe Limited.
+This project was funded by Sony Europe Limited.
 
 
 This project was inspired by [NeRFStudio](https://nerf.studio/) and [SDFStudio](https://github.com/autonomousvision/sdfstudio).  
