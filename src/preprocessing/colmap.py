@@ -15,6 +15,7 @@ COLMAP utils for dataset preprocessing
 
 import os
 import subprocess
+from packaging import version
 
 import numpy as np
 import cv2 as cv
@@ -175,10 +176,15 @@ def compute_colmap_scale(colmap_path, reference_mod, modality_data):
 
     img1 = cv.imread(os.path.join(colmap_path, "temp_images", "modalities", reference_mod, "0000.png"))
     img1, undistorted_camera_matrix = undistort_frame(img1, camera_matrix, modality_data[reference_mod]["dist_coeffs"])
-    marker_corners_1, marker_ids_1, _ = cv.aruco.detectMarkers(img1, dictionary, parameters=params)
     img2 = cv.imread(os.path.join(colmap_path, "temp_images", "modalities", reference_mod, "0025.png"))
     img2, _ = undistort_frame(img2, camera_matrix, modality_data[reference_mod]["dist_coeffs"])
-    marker_corners_2, marker_ids_2, _ = cv.aruco.detectMarkers(img2, dictionary, parameters=params)
+
+    if version.parse(cv.__version__) >= version.parse("4.7.0"):
+        marker_corners_1, marker_ids_1, _ = cv.aruco.ArucoDetector(dictionary, params).detectMarkers(img1)
+        marker_corners_2, marker_ids_2, _ = cv.aruco.ArucoDetector(dictionary, params).detectMarkers(img2)
+    else:
+        marker_corners_1, marker_ids_1, _ = cv.aruco.detectMarkers(img1, dictionary, parameters=params)
+        marker_corners_2, marker_ids_2, _ = cv.aruco.detectMarkers(img2, dictionary, parameters=params)
 
     intrinsics = np.eye(4)
     intrinsics[:3, :3] = undistorted_camera_matrix
