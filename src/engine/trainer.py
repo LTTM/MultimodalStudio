@@ -207,7 +207,7 @@ class Trainer:
                 load_step = sorted(int(x[x.find("-") + 1 : x.find(".")]) for x in os.listdir(load_dir))[-1]
             load_path = os.path.join(load_dir, f"step-{load_step:09d}.ckpt")
             assert os.path.exists(load_path), f"Checkpoint {load_path} does not exist"
-            loaded_state = torch.load(load_path, map_location="cpu")
+            loaded_state = torch.load(load_path, map_location="cpu", weights_only=False)
             self.step_start = loaded_state["step"] + 1
             # load the checkpoints for pipeline, optimizers, and gradient scalar
             self.pipeline.load_state_dict(loaded_state)
