@@ -1,1 +1,482 @@
-SPoILeR!
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="SPoILeR: Learning Spectral and Polarimetric Clues for One-to-Multimodal Novel View Synthesis">
+  <meta name="keywords" content="SPoILeR, spoiler, MultimodalStudio, multimodalstudio, MMS, mms, multimodal, eccv 2026, nerf, novel view synthesis, infrared, multispectral, polarization, modality conversion, pre-training, fine-tuning">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPoILeR: Learning Spectral and Polarimetric Clues for One-to-Multimodal Novel View Synthesis</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="../static/css/bulma.min.css">
+  <link rel="stylesheet" href="../static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="../static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="../static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="../static/css/index.css">
+
+  <!--
+  <link rel="icon" href="../static/images/favicon.svg">
+  -->
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="../static/js/fontawesome.all.min.js"></script>
+  <script src="../static/js/bulma-carousel.min.js"></script>
+  <script src="../static/js/bulma-slider.min.js"></script>
+  <script src="../static/js/index.js"></script>
+</head>
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          More Research
+        </a>
+        <div class="navbar-dropdown">
+          <a class="navbar-item" href="https://lttm.github.io/MultimodalStudio/">
+            MultimodalStudio
+          </a>
+          <a class="navbar-item" href="https://proceedings.bmvc2023.org/571/">
+            MP-SDF
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title"><span style="font-size: 1.5em;">SPoILeR:</span><br> Learning Spectral and Polarimetric Clues for One-to-Multimodal Novel View Synthesis</h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://medialab.dei.unipd.it/members/federico-lincetto/">Federico Lincetto</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=Ysz_fQoAAAAJ&hl=en&oi=ao">Gianluca Agresti</a><sup>2</sup>,</span>
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=DA3nSvgAAAAJ&hl=en&oi=ao">Mattia Rossi</a><sup>2</sup>,
+            </span>
+            <span class="author-block">
+              Piergiorgio Sartor<sup>2</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://medialab.dei.unipd.it/members/pietro-zanuttigh/">Pietro Zanuttigh</a><sup>1</sup>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup><a href="https://medialab.dei.unipd.it/">Media Lab</a> - University of Padova,</span>
+            <span class="author-block"><sup>2</sup>Sony Semiconductor Solutions Europe</span>
+          </div>
+
+          <br/>
+
+          <div class="is-size-5 publication-authors" style="margin-bottom: 0.5em;">
+            <span class="author-block">ECCV 2026</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper (coming soon)</span>
+                </a>
+              </span>
+              <!-- Supplementary Link. -->
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-archive"></i>
+                  </span>
+                  <span>Supplementary (coming soon)</span>
+                </a>
+              </span>
+              <!-- ArXiv Link. -->
+              <span class="link-block">
+                <a href="http://arxiv.org/abs/2607.02372"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>ArXiv</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code (coming soon)</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container ">
+      <h2 class="title has-text-centered is-3">
+        TL;DR
+      </h2>
+      <p class="has-text-justified">
+        We present <i>SPoILeR</i>, a multimodal NeRF-based method that renders multi-view consistent Near-Infrared, Monochrome, Polarization, and Multispectral views of a scene captured with RGB cameras alone. A multi-scene multimodal pre-training phase lets the model learn the mutual correlation between imaging modalities; a lightweight per-scene fine-tuning phase, supervised only by RGB frames, then recovers photorealistic and multi-view consistent renderings of the modalities that were never captured for that scene.
+      </p>
+    </div>
+  </div>
+</section>
+<br/>
+<br/>
+<br/>
+<section class="hero teaser">
+  <div class="hero-body" style="padding-bottom: 0">
+    <div class="container">
+      <img src="../static/images/spoiler/teaser.jpg"
+            class="interpolation-image"
+            alt="SPoILeR visual abstract."/>
+      <p class="has-text-centered">
+        <i>SPoILeR</i> firstly learns the mutual correlation across multiple imaging modalities on a collection of multimodal scenes. Then, a single-scene fine-tuning on RGB data alone produces a model able to render multi-view consistent views of any of the pre-trained modalities for the new scene.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Neural rendering techniques allow for accurate reconstruction of the geometry and color appearance of 3D scenes. Some methods have extended their use to additional imaging modalities, such as multispectral, infrared, or polarimetric data. However, all of these approaches require expensive sensors and calibrated setups to capture new multimodal frames for each new scene.
+          </p>
+          <p>
+            We propose <i>SPoILeR</i>, a novel method to obtain multi-view consistent renderings of unconventional modalities for scenes where either only RGB frames or very few of the additional modalities are available. Thanks to a multimodal pre-training phase, the model learns the mutual correlation between different modalities. This step allows predicting accurate renderings of unconventional modalities during a fine-tuning phase supervised only by RGB images.
+          </p>
+          <p>
+            Experimental results show that the approach can accurately render infrared, polarimetric, and multispectral frames for scenes where no input sample captured by these types of sensors is provided.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title has-text-centered is-3">Qualitative Results</h2>
+      <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 0.5rem">
+        <tr>
+          <td width="4%"></td>
+          <td width="19.2%"><b>RGB</b></td>
+          <td width="19.2%"><b>NIR</b></td>
+          <td width="19.2%"><b>Mono</b></td>
+          <td width="19.2%"><b>Pol</b></td>
+          <td width="19.2%"><b>MS</b></td>
+        </tr>
+        <tr>
+          <td style="vertical-align: middle;"><b>GT</b></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_rgb_gt.jpg" class="interpolation-image" alt="RGB ground truth"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_infrared_gt.jpg" class="interpolation-image" alt="NIR ground truth"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_mono_gt.jpg" class="interpolation-image" alt="Mono ground truth"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_polarization_gt.jpg" class="interpolation-image" alt="Pol ground truth"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_multispectral_gt.jpg" class="interpolation-image" alt="MS ground truth"/></td>
+        </tr>
+        <tr>
+          <td style="vertical-align: middle;"><b>Ours</b></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_rgb_ren.jpg" class="interpolation-image" alt="RGB rendering"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_infrared_ren.jpg" class="interpolation-image" alt="NIR rendering"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_mono_ren.jpg" class="interpolation-image" alt="Mono rendering"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_polarization_ren.jpg" class="interpolation-image" alt="Pol rendering"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_multispectral_ren.jpg" class="interpolation-image" alt="MS rendering"/></td>
+        </tr>
+        <tr>
+          <td style="vertical-align: middle;"><b>Error</b></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_rgb_err.jpg" class="interpolation-image" alt="RGB error map"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_infrared_err.jpg" class="interpolation-image" alt="NIR error map"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_mono_err.jpg" class="interpolation-image" alt="Mono error map"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_polarization_err.jpg" class="interpolation-image" alt="Pol error map"/></td>
+          <td><img src="../static/images/spoiler/qualitative/fruits_49_multispectral_err.jpg" class="interpolation-image" alt="MS error map"/></td>
+        </tr>
+      </table>
+      <div class="has-text-centered" style="margin-bottom: 1rem">
+        <img src="../static/images/spoiler/qualitative/colorbar_crop.jpeg" style="width: 320px;" alt="Error colorbar"/>
+      </div>
+      <p>
+        Qualitative samples from the "Fruits" scene, fine-tuned with <b>RGB supervision only</b>. <i>SPoILeR</i> (Ours) recovers convincing NIR, Mono, Pol, and MS renderings despite never observing a single frame of these modalities for this scene.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+
+    <!-- Method and Results. -->
+      <div class="column is-full-width">
+
+        <h2 class="title is-3">Model Architecture</h2>
+        <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
+          <tr>
+            <td width="50%" style="padding: 0.75rem;">
+              <img src="../static/images/spoiler/schema.jpg"
+                   class="interpolation-image"
+                   alt="Radiance module architecture."/>
+            </td>
+            <td width="50%" style="padding: 0.75rem;">
+              <div class="content has-text-justified">
+                <p>
+                  <i>SPoILeR</i> builds on the MultimodalStudio NeRF-based radiance module and replaces its multi-resolution hash-grids with <b>two sets of learnable feature grids</b>, inspired by Dictionary Fields: a <b>basis field</b> and a <b>coefficient field</b>.
+                </p>
+                <p>
+                  The basis field, together with a shared projection function, latent encoder, and per-modality decoders, is <b>common to every scene</b> and stores the mutual correlation between imaging modalities. The coefficient field is instead optimized <b>independently for each scene</b> and captures its specific geometry and radiance properties, such as textures and reflections.
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 class="title is-3">Pre-training &amp; Fine-tuning Pipeline</h2>
+        <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
+          <tr>
+            <td width="50%" style="padding: 0.75rem;">
+              <img src="../static/images/spoiler/pre-training.jpg"
+                   class="interpolation-image"
+                   alt="Pre-training routine."/>
+            </td>
+            <td width="50%" style="padding: 0.75rem;">
+              <div class="content has-text-justified">
+                <p>
+                  <i>SPoILeR</i> is trained in <b>two stages</b>. During <b>pre-training</b>, the model observes several multimodal multi-view scenes and alternately freezes the shared modules and the scene-specific modules on a fixed schedule, letting the shared modules learn a general multimodal radiance prior while every scene keeps its own coefficients.
+                </p>
+                <p>
+                  During <b>fine-tuning</b>, the shared modules are frozen and only the coefficient field and geometry of the new scene are optimized. Because the new scene may only provide RGB supervision, the pre-trained shared modules supply the missing multimodal knowledge, enabling photorealistic and multi-view consistent renderings of modalities never captured for that scene &mdash; with a much smaller and faster optimization than training a model from scratch.
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 class="title is-3">Latent Regularization Strategies</h2>
+        <div class="content has-text-justified" style="margin-bottom: 1.5rem">
+          <p>
+            Training with limited multimodal supervision makes the latent radiance space prone to diverging for the unobserved modalities. <i>SPoILeR</i> introduces <b>three regularization losses</b> that keep the multimodal latent space robust, explainable, and consistent between pre-training and fine-tuning.
+          </p>
+        </div>
+        <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 2.5rem">
+          <tr>
+            <td width="50%" style="padding: 0.75rem;">
+              <img src="../static/images/spoiler/latent_space_geometry_loss.jpg"
+                   class="interpolation-image"
+                   alt="Latent space geometry loss."/>
+            </td>
+            <td width="50%" style="padding: 0.75rem;">
+              <div class="content has-text-justified">
+                <p>
+                  <b>Latent Space Geometry Loss.</b> Encourages the pairwise distances between latent vectors to mirror the pairwise distances between the corresponding decoded multimodal radiance values, so that small latent shifts do not produce unpredictable jumps in the rendered radiance. It is only applied during pre-training, while the multimodal latent geometry is being formed.
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td width="50%" style="padding: 0.75rem; padding-top: 2.5rem;">
+              <img src="../static/images/spoiler/inverse_loss_schema.jpg"
+                   class="interpolation-image"
+                   style="max-width: 75%;"
+                   alt="Inverse function loss."/>
+            </td>
+            <td width="50%" style="padding: 0.75rem; padding-top: 2.5rem;">
+              <div class="content has-text-justified">
+                <p>
+                  <b>Inverse Function Loss.</b> A small MLP is trained during pre-training to invert the decoding process, mapping decoded multimodal radiance values back to the latent vector that produced them. Kept frozen during fine-tuning, it provides a target that keeps the fine-tuned latent space consistent with the one learned during pre-training, preventing the correlation between modalities from being forgotten.
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td width="50%" style="padding: 0.75rem; padding-top: 2.5rem;">
+              <img src="../static/images/spoiler/modality2luma_schema.jpg"
+                   class="interpolation-image"
+                   alt="Modality-to-luma loss."/>
+            </td>
+            <td width="50%" style="padding: 0.75rem; padding-top: 2.5rem;">
+              <div class="content has-text-justified">
+                <p>
+                  <b>Modality-to-luma Loss.</b> A second small MLP learns, during pre-training, to predict the RGB luminance that corresponds to any modality's radiance values. Used frozen during fine-tuning, it nudges modalities that partially overlap with the visible spectrum &mdash; such as Mono, NIR, and Pol &mdash; to stay correlated with RGB, which is especially important for Mono and NIR renderings.
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 class="title is-3" style="margin-top: 3rem;">Quantitative Results</h2>
+        <div class="content has-text-justified" style="margin-bottom: 1rem">
+          <p>
+            <i>SPoILeR</i> (Ours) is fine-tuned using RGB supervision alone and compared with MultimodalStudio (MMS-FW), trained from scratch on the same scene with the same single-modality supervision. Despite having <b>3&times; fewer parameters</b> and a <b>4&times; shorter fine-tuning time</b>, <i>SPoILeR</i> matches MMS-FW on the supervised RGB modality and, more importantly, is the only method able to render photorealistic views of Mono, NIR, Pol, and MS &mdash; which MMS-FW simply cannot produce without their own captured frames. When both methods are supervised by every modality (upper bound), MMS-FW's larger from-scratch capacity gives it an edge of about 2 dB PSNR, while SSIM remains comparable.
+          </p>
+        </div>
+
+        <h2 class="title is-3" style="margin-top: 3rem;">Unbalanced Combination of Modalities</h2>
+        <div class="content has-text-justified" style="margin-bottom: 1rem">
+          <p>
+            Let's consider a scenario with an unbalanced number of frames per modality: <b>45 RGB</b> frames are always available, while the second-modality (MS, Pol, or NIR) frames are reduced to <b>1, 3, 5, 10, or 25</b>.
+          </p>
+          <p>
+            <i>SPoILeR</i> clearly outperforms MMS-FW, particularly with few second-modality frames. With just a single MS, Pol, or NIR frame, <i>SPoILeR</i> achieves gains of <b>&sim;8, &sim;7, and &sim;6 dB</b> PSNR, respectively, and it still holds a <b>&sim;2.5 dB</b> advantage with 10 frames &mdash; MMS-FW only matches <i>SPoILeR</i>'s performance once 25 frames are available.
+          </p>
+          <p>
+            These results confirm that the pre-trained multimodal prior lets <i>SPoILeR</i> make the most of very limited additional-modality supervision.
+          </p>
+        </div>
+        <div class="content" style="margin-bottom: 1rem">
+          <img src="../static/images/spoiler/unbalanced_modalities.jpg"
+               class="interpolation-image"
+               alt="Unbalanced combination of modalities results."/>
+        </div>
+
+        <h2 class="title is-3" style="margin-top: 3rem;">Comparison with Third-party Modality Conversion Methods</h2>
+        <div class="content has-text-justified" style="margin-bottom: 1rem">
+          <p>
+            Feed-forward RGB-to-modality conversion networks such as MST++ (for multispectral) and PolarAnything (for polarization) can be combined with a standard NeRF by first converting each RGB frame and then training on the converted frames. However, since these networks operate on a single view at a time, their outputs are <b>not multi-view consistent</b>, and this inconsistency propagates into the trained radiance field. In contrast, <i>SPoILeR</i>'s fine-tuning is grounded in a multimodal prior learned jointly across many 3D scenes, and clearly outperforms this two-stage strategy.
+          </p>
+        </div>
+        <div class="columns is-centered" style="margin-bottom: 1rem">
+          <div class="column is-five-twelfths">
+            <p class="has-text-centered" style="margin-bottom: 0.5rem"><b>vs. MST++ (Multispectral)</b></p>
+            <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth has-text-centered">
+              <thead>
+                <tr><th>Method</th><th>Train</th><th>Test</th><th>PSNR&uarr;</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>MMS-FW</td><td>MS*</td><td>MS</td><td>21.99</td></tr>
+                <tr><td>Ours</td><td>RGB</td><td>MS</td><td><b>25.45</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="column is-six-twelfths">
+            <p class="has-text-centered" style="margin-bottom: 0.5rem"><b>vs. PolarAnything (Polarization)</b></p>
+            <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth has-text-centered">
+              <thead>
+                <tr><th>Method</th><th>Train</th><th>Test</th><th>MAngE(&deg;)&darr;</th><th>MAbsE&darr;</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>MMS-FW</td><td>Pol*</td><td>Pol</td><td>44.13</td><td>0.089</td></tr>
+                <tr><td>Ours</td><td>RGB</td><td>Pol</td><td><b>30.05</b></td><td><b>0.045</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="content has-text-justified" style="margin-bottom: 2.5rem">
+          <p>
+            <i>SPoILeR</i> outperforms MMS-FW coupled with MST++ by <b>3.46 dB</b> PSNR on MS, and MMS-FW coupled with PolarAnything by <b>14.08&deg;</b> / <b>0.044</b> on the polarization angle / degree errors, confirming its reliability as the current state of the art for multi-view consistent modality-to-modality conversion.
+          </p>
+        </div>
+
+        <h2 class="title is-3" style="margin-top: 3rem;">Ablation Study</h2>
+        <div class="content has-text-justified">
+          <p>
+            Every ablation leads to worse results. The <b>modality-to-luma loss</b> is the most impactful, particularly for Mono and NIR: these sensors also measure part of the infrared spectrum, so without this loss the model tends to decouple their representation from RGB. The <b>inverse function loss</b> plays a complementary role, anchoring the fine-tuning latent space to the correlations learned during pre-training across all modalities. Finally, the <b>latent space geometry loss</b> mostly benefits Pol and MS &mdash; the two modalities with the richest, most inter-correlated channels &mdash; by making the decoded radiance less sensitive to small latent perturbations.
+          </p>
+        </div>
+        <table class="is-centered has-text-centered is-fullwidth" style="margin-bottom: 1.5rem">
+          <tr>
+            <td width="55%" style="padding: 0.75rem;">
+              <img src="../static/images/spoiler/ablation_study.jpg"
+                   class="interpolation-image"
+                   alt="Ablation study qualitative results."/>
+            </td>
+            <td width="45%" style="padding: 0.75rem;">
+              <div class="table-container">
+                <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth has-text-centered">
+                  <thead>
+                    <tr><th>Mod.</th><th>Ours</th><th>w/o L<sub>lsg</sub></th><th>w/o L<sub>inv</sub></th><th>w/o L<sub>m2l</sub></th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>RGB</td><td><b>30.07</b></td><td>29.90</td><td>29.96</td><td>29.95</td></tr>
+                    <tr><td>Mono</td><td><b>25.78</b></td><td>25.44</td><td>25.54</td><td>21.04</td></tr>
+                    <tr><td>NIR</td><td><b>26.55</b></td><td>26.30</td><td>25.96</td><td>22.91</td></tr>
+                    <tr><td>Pol</td><td><b>24.25</b></td><td>23.08</td><td>24.01</td><td>23.73</td></tr>
+                    <tr><td>MS</td><td><b>25.45</b></td><td>23.14</td><td>25.28</td><td>25.36</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="has-text-centered" style="margin-top: 0.5rem"><small>PSNR (dB) of the RGB-supervised fine-tuning.</small></p>
+            </td>
+          </tr>
+        </table>
+    </div>
+  </div>
+</section>
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@inproceedings{lincetto2026spoiler,
+  author    = {Lincetto, Federico and Agresti, Gianluca and Rossi, Mattia and Sartor, Piergiorgio and Zanuttigh, Pietro},
+  title     = {Learning Spectral and Polarimetric Clues for One-to-Multimodal Novel View Synthesis},
+  booktitle = {Proceedings of the European Conference on Computer Vision (ECCV)},
+  year      = {2026},
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+
+            <p>
+              This collaborative work is funded by Sony Europe Limited.<br/>
+              The work of P. Zanuttigh is also partially supported by the Italian Ministry of University and Research (MUR) under the PRIN 2022 SEQUOIA project (code 2022KCKYA2).
+            </p>
+
+            <p>
+              This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+            </p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
