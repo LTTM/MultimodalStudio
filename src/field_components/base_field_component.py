@@ -42,6 +42,7 @@ class FieldComponentConfig(InstantiateConfig):
     output_dim: int = None
     """Output dimension of the module."""
 
+
 class FieldComponent(nn.Module):
     """Base field module. Any neural module is a field component and inherits from this class.
 
@@ -59,6 +60,10 @@ class FieldComponent(nn.Module):
         self.config = config
         self.input_dim = input_dim if input_dim is not None else self.config.input_dim
         self.output_dim = output_dim if output_dim is not None else self.config.output_dim
+
+    def build_nn_modules(self) -> None:
+        """Function instantiates any torch.nn members within the module.
+        If none exist, do nothing."""
 
     def set_in_dim(self, input_dim: int) -> None:
         """Sets input dimension of encoding

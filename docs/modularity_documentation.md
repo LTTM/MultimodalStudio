@@ -59,7 +59,7 @@ This approach allows you to fully customize the architecture by composing differ
 
 ## 4. Customizing Methods with Configuration Files
 
-If you want to change some parameters of a method **without modifying the set of modules**, you can use a YAML configuration file (see examples in the `./confs` directory).
+If you want to change some parameters of a method **without modifying the set of modules**, you can use a YAML configuration file. The configurations of MultimodalStudio are in `./confs/multimodalstudio/`, the ones of SPoILeR in `./confs/spoiler/`, and `./confs/template.yaml` is a fully commented template listing the available options.
 
 - The YAML file can overwrite only variables that are numerical, string, or boolean values, or data structures (like dictionaries or lists) containing these types.
 - **You cannot swap out a module for a different one using a YAML file.** The set of modules is fixed by the method configuration in `method_configs.py`.
@@ -72,11 +72,18 @@ pipeline:
     surface_model:
       surface_field:
         field:
-          hidden_dim: 512
+          mlp_head:
+            hidden_dim: 512
       compute_hessian: false
 ```
 
-This will override the `hidden_dim` and `compute_hessian` parameters for the specified modules, but will not change which modules are used.
+This will override the `hidden_dim` of the surface field MLP head and the `compute_hessian` parameter, but will not change which modules are used.
+
+Note that the YAML path must mirror the Config tree exactly. Unknown *nested* keys raise an
+`AttributeError` naming the offending attribute, so a typo fails fast; unknown *top-level* keys
+are ignored silently. Keys inside dictionary-valued fields (for instance `loss_manager.additional_losses`
+or `modality_heads`) are an exception: a name that does not already exist there is inserted rather
+than rejected, and only fails later when the framework tries to instantiate it.
 
 ## 5. Best Practices
 
@@ -86,3 +93,21 @@ This will override the `hidden_dim` and `compute_hessian` parameters for the spe
 - Extend Config or Implementation classes with subclasses as needed for advanced customization.
 
 For more details, refer to the code in `src/configs/method_configs.py` and the example configuration files in `./confs`.
+
+## 6. Pipelines
+
+The pipeline is the top-level module of a method and decides how training is driven. Besides
+`BasePipeline` (single scene) and `RawPipeline` (single scene, mosaicked frames), the framework
+provides:
+
+- **`MultiScenePipeline` / `MultiSceneRawPipeline`** — pre-training over several scenes at once. The
+  datamanager cycles through the scenes every `steps_per_scene` iterations, and the modules wrapped
+  in a `MultiModule` are replicated once per scene, so that scene-specific parameters are kept
+  separate while the remaining parameters are shared across all scenes.
+- **`FineTuningPipeline` / `FineTuningRawPipeline`** — adaptation of a pre-trained model to a single
+  new scene. They load the checkpoint indicated by `pretrained_model_path`, optionally average the
+  per-scene replicas of each `MultiModule` into a single instance (`average_multi_modules`), and
+  freeze everything that must not be adapted (see `freeze_modules`).
+
+Since the pipeline is part of the method configuration, switching between them requires a new entry
+in `method_configs.py`, not a YAML override.

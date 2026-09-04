@@ -64,15 +64,16 @@ class RadianceField(BaseRadianceField):
             view_direction_dim=3,
             additional_input_dim=0,
             output_dim: int = 3,
+            **kwargs
     ):
         input_dim = position_dim + view_direction_dim + additional_input_dim
         super().__init__(config, input_dim=input_dim, output_dim=output_dim)
-        self.base_field = self.config.base_field.setup(input_dim=self.input_dim, output_dim=self.output_dim)
+        self.base_field = self.config.base_field.setup(input_dim=self.input_dim, output_dim=self.output_dim, **kwargs)
 
-    def forward(self, positions, view_directions, additional_inputs):
+    def forward(self, positions, view_directions, additional_inputs, **kwargs):
         """Estimate the radiance of the scene given the input positions, view directions and additional inputs."""
         inputs = torch.cat([positions, view_directions, additional_inputs], dim=-1)
-        output = self.base_field(inputs)
+        output = self.base_field(inputs, **kwargs)
 
         return output
 

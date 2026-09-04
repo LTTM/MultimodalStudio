@@ -77,3 +77,12 @@ class MeshExtractor:
         if self.config.gt_scale:
             mesh.apply_transform(self.w2gt)
         mesh.export(output_path)
+
+    def update_w2gt(self, w2gt):
+        """Update the world to ground truth transformation matrix."""
+        self.w2gt = w2gt.cpu().numpy()
+
+    def update_scene_box(self, scene_box: SceneBox):
+        """Update the bounding box."""
+        self.bounding_box_min = scene_box.aabb[0]
+        self.bounding_box_max = scene_box.aabb[1]

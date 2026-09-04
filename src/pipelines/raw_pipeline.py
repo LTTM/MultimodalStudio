@@ -25,14 +25,12 @@ Pipeline for training and evaluating the model with raw data.
 from dataclasses import dataclass, field
 from typing import Type
 
-import torch
 from lightning import Fabric
 from rich.console import Console
 
 from pipelines.base_pipeline import BasePipelineConfig, BasePipeline
 from utils import profiler
 from utils.eval_utils import compute_metrics
-from utils.misc import check_step
 
 CONSOLE = Console(width=120)
 
@@ -69,7 +67,7 @@ class RawPipeline(BasePipeline):
         (pixel_coords, pixels) = next(self.datamanager.iter_train_dataloader)
         ray_bundles = self.datamanager.train_ray_generator(pixel_coords)
         outputs = self.model(ray_bundles)
-        outputs = self.select_right_channel_per_pixel(pixel_coords, outputs)
+        # outputs = self.select_right_channel_per_pixel(pixel_coords, outputs)
         losses, total_loss = self.loss_manager.compute_loss(outputs, pixels, pixel_coords, step)
         metrics = compute_metrics(outputs, pixels, modalities=self.datamanager.modalities)
 
@@ -85,38 +83,7 @@ class RawPipeline(BasePipeline):
         """Performs an evaluation step and returns the losses and metrics."""
         self.set_eval()
         losses, total_loss, metrics = None, None, None
-        if check_step(step, self.trainer_config.steps_per_eval_batch):
-            (pixel_coords, pixels) = next(self.datamanager.iter_eval_dataloader)
-            ray_bundles = self.datamanager.eval_ray_generator(pixel_coords)
-
-            with torch.no_grad():
-                outputs = self.model.module(ray_bundles)
-
-            outputs = self.select_right_channel_per_pixel(pixel_coords, outputs, eval_step=True)
-            losses, total_loss = self.loss_manager.compute_loss(outputs, pixels, pixel_coords, step, eval_step=True)
-            metrics = compute_metrics(outputs, pixels, modalities=self.datamanager.modalities, eval_step=True)
-
-        if check_step(step, self.trainer_config.steps_per_eval_image, skip_first=True) and self.global_rank == 0:
-            self.evaluator.render_train_view(step)
-            self.evaluator.render_eval_view(step)
-        if check_step(step, self.trainer_config.steps_per_eval_all_images, skip_first=True) and self.global_rank == 0:
-            self.evaluator.render_all_eval_views(step)
-        if check_step(step, self.trainer_config.steps_per_export_mesh, skip_first=True) and self.global_rank == 0:
-            self.evaluator.export_mesh(step)
-        if check_step(step, self.trainer_config.steps_per_export_poses, skip_first=False) and self.global_rank == 0:
-            self.evaluator.export_poses(step)
-
+        if self.fabric.global_rank == 0:
+            losses, total_loss, metrics = self.evaluator.evaluation_step(step)
         self.set_train()
         return losses, total_loss, metrics
-
-    def select_right_channel_per_pixel(self, pixel_coords_per_modality, outputs, eval_step=False):
-        """Select only one channel per pixel for each modality to be supervised by the loss function."""
-        mosaick_mask_per_modality = self.datamanager.train_dataset.mosaick_mask_per_modality
-        for mod in self.datamanager.modalities:
-            mosaick_mask = mosaick_mask_per_modality[mod]
-            pixel_coords = pixel_coords_per_modality[mod]
-            rendered_pixels = outputs[mod][mod]
-            band_mask = mosaick_mask[pixel_coords[:,1], pixel_coords[:,2]].unsqueeze(dim=1).type(torch.int64)
-            outputs[mod][mod] = torch.gather(rendered_pixels, 1, band_mask)
-
-        return outputs

@@ -125,16 +125,6 @@ class TrainerConfig(PrintableConfig):
     """Pipeline configuration"""
     steps_per_save: int = 5000
     """Number of steps between saves."""
-    steps_per_eval_batch: int = 100
-    """Number of steps between randomly sampled batches of rays."""
-    steps_per_eval_image: int = 1000
-    """Number of steps between single eval images."""
-    steps_per_export_mesh: int = 5000
-    """Number of steps between eval mesh."""
-    steps_per_export_poses: int = 5000
-    """Number of steps between eval camera poses."""
-    steps_per_eval_all_images: int = 25000
-    """Number of steps between eval all images."""
     max_num_iterations: int = 100000
     """Maximum number of iterations to run."""
     mixed_precision: bool = False

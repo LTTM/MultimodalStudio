@@ -25,14 +25,14 @@ import torch
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 
 from cameras.rays import RayBundle
-from utils import writer
-from utils.writer import EventName, TimeWriter
+from utils.misc import get_dict_to_cpu
 
 def eval_model_query(
         ray_bundles: Dict[str, RayBundle],
         num_rays_per_chunk: int,
         model_fn,
         step,
+        key_to_exclude: List[str] = None,
 ):
     """
     Performs a model query on the given ray bundles.
@@ -41,37 +41,36 @@ def eval_model_query(
         num_rays_per_chunk: Number of rays to process in each chunk.
         model_fn: Model function to query.
         step: Current training step.
+        key_to_exclude: List of keys to exclude from the output.
     Returns:
         outputs: List of model outputs for each ray bundle.
     """
     outputs = []
     max_pixel_number = max([len(x) if x is not None else 0 for x in ray_bundles.values()])
 
-    with TimeWriter(writer, EventName.TEST_RAYS_PER_SEC, write=False) as test_t:
-        for i in range(0, max_pixel_number, num_rays_per_chunk):
-            start_idx = i
-            end_idx = i + num_rays_per_chunk
-            ray_bundles_chunk = {}
-            for mod in ray_bundles:
-                if ray_bundles[mod] is None:
-                    ray_bundles_chunk[mod] = None
-                elif len(ray_bundles[mod]) <= start_idx:
-                    ray_bundles_chunk[mod] = None
-                elif len(ray_bundles[mod]) < end_idx:
-                    ray_bundles_chunk[mod] = ray_bundles[mod][start_idx:]
-                else:
-                    ray_bundles_chunk[mod] = ray_bundles[mod][start_idx:end_idx]
+    for i in range(0, max_pixel_number, num_rays_per_chunk):
+        start_idx = i
+        end_idx = i + num_rays_per_chunk
+        ray_bundles_chunk = {}
+        for mod in ray_bundles:
+            if ray_bundles[mod] is None:
+                ray_bundles_chunk[mod] = None
+            elif len(ray_bundles[mod]) <= start_idx:
+                ray_bundles_chunk[mod] = None
+            elif len(ray_bundles[mod]) < end_idx:
+                ray_bundles_chunk[mod] = ray_bundles[mod][start_idx:]
+            else:
+                ray_bundles_chunk[mod] = ray_bundles[mod][start_idx:end_idx]
 
-            with torch.no_grad():
-                output = model_fn(ray_bundles_chunk)
-            outputs.append(output)
-
-    writer.put_time(
-        name=EventName.TEST_RAYS_PER_SEC,
-        duration=sum([len(x) if x is not None else 0 for x in ray_bundles.values()]) / test_t.duration,
-        step=step,
-        avg_over_steps=True,
-    )
+        with torch.no_grad():
+            output = model_fn(ray_bundles_chunk)
+            output = get_dict_to_cpu(output)
+        for key in key_to_exclude or []:
+            if "accumulation" not in key:  # Keep accumulation for metrics computation
+                for mod in output.keys():
+                    if output[mod] is not None:
+                        output[mod].pop(key, None)
+        outputs.append(output)
     return outputs
 
 def render_outputs(
@@ -169,10 +168,13 @@ def render_outputs(
     accumulation_list = [f"accumulation_{mod}" for mod in modalities]
     for extra_key, extra_rendering in extra_renderings.items():
         frame = torch.cat(extra_rendering)
-        extra_mod = list(modalities.keys())[accumulation_list.index(extra_key)]
-        frame = frame.view((*(gt_frames[extra_mod].shape[:-1]), -1)) \
-            if extra_key in accumulation_list \
-            else frame.view((*(gt_frames[first_valid_mod].shape[:-1]), -1))
+        if extra_key in accumulation_list:
+            extra_mod = list(modalities.keys())[accumulation_list.index(extra_key)]
+            frame = frame.view((*(gt_frames[extra_mod].shape[:-1]), -1))
+        else:
+            frame = frame.view((*(gt_frames[first_valid_mod].shape[:-1]), -1))
+            mask = extra_renderings[f"accumulation_{first_valid_mod}"].squeeze() < 0.9
+            frame[mask] = 0
         extra_renderings[extra_key] = frame
 
     return renderings, aligned_renderings, geometry_renderings, extra_renderings
@@ -206,8 +208,7 @@ def combine_renderings(
         gt = gt_frames[mod]
 
         # Side by side frames [rendering, GT, difference]
-        diff = torch.linalg.norm(frame.clip(0., 1.) - gt, dim=-1)
-        diff = diff.unsqueeze(dim=-1).expand(frame.shape)
+        diff = torch.abs(frame.clip(0., 1.) - gt)
         side_by_side_renderings[mod] = torch.cat([frame, gt, diff], dim=1).cpu().numpy()
 
         # Aligned renderings
@@ -277,16 +278,18 @@ def export_renderings(
                 frame = np.expand_dims(frame, axis=-1)
             elif frame.shape[-1] == 3:
                 frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
-            frame = np.clip(frame, 0, 1.)
-            frame = (frame * 65535.).astype(np.uint16)
+            if not "latent" in mod:
+                frame = np.clip(frame, 0, 1.)
+                frame = (frame * 65535.).astype(np.uint16)
             if mod == "angle_of_polarization":
                 frame = cv.applyColorMap(np.right_shift(frame, 8).astype(np.uint8), cv.COLORMAP_TWILIGHT)
             if frame.shape[-1] > 3:
                 np.save(os.path.join(export_path, f"{final_export_name}_{mod}.npy"), frame)
-                cv.imwrite(
-                    filename=os.path.join(export_path, f"{final_export_name}_{mod}.png"),
-                    img=frame.mean(axis=-1).astype(np.uint16)
-                )
+                if not "latent" in mod:
+                    cv.imwrite(
+                        filename=os.path.join(export_path, f"{final_export_name}_{mod}.png"),
+                        img=frame.mean(axis=-1).astype(np.uint16)
+                    )
             else:
                 cv.imwrite(os.path.join(export_path, f"{final_export_name}_{mod}.png"), frame)
     else:
@@ -314,11 +317,13 @@ def export_renderings(
             frame = np.expand_dims(frame, axis=-1)
         elif frame.shape[-1] == 3:
             frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
-        frame = np.clip(frame, 0, 1.)
-        frame = (frame * 65535.).astype(np.uint16)
+        if not "latent" in final_export_name:
+            frame = np.clip(frame, 0, 1.)
+            frame = (frame * 65535.).astype(np.uint16)
         if frame.shape[-1] > 3:
             np.save(os.path.join(export_path, f"{final_export_name}.npy"), frame)
-            cv.imwrite(os.path.join(export_path, f"{final_export_name}.png"), frame.mean(axis=-1).astype(np.uint16))
+            if not "latent" in final_export_name:
+                cv.imwrite(os.path.join(export_path, f"{final_export_name}.png"), frame.mean(axis=-1).astype(np.uint16))
         else:
             cv.imwrite(os.path.join(export_path, f"{final_export_name}.png"), frame)
 
@@ -392,3 +397,38 @@ def compute_metrics(
             metrics["SSIM"] = structural_similarity_index_measure(output, gt, data_range=1.0)
         metrics["PSNR"] = peak_signal_noise_ratio(output, gt, data_range=1.0)
         return metrics
+
+def export_metrics_to_file(metrics, path, step):
+    """Export the metrics to a txt file."""
+    open(path, 'a').close()
+    with open(path, 'r+') as f:
+        content = f.read()
+        f.seek(0, 0)
+        indexes = metrics['idx']
+        if not isinstance(indexes[0], list):
+            sorting_idx = sorted(range(len(indexes)), key=lambda k: indexes[k])
+            indexes = [indexes[i] for i in sorting_idx]
+        else:
+            indexes = [next((x for i, x in enumerate(idx) if x is not None), None) for idx in indexes]
+            sorting_idx = sorted(range(len(indexes)), key=lambda k: indexes[k])
+            indexes = [indexes[i] for i in sorting_idx]
+        f.write(f"Step: {step}\n")
+        for mod in metrics:
+            if mod == 'idx':
+                continue
+            f.write(f"{mod}:\n")
+            f.write("\tFRAME:\t" + "\t\t".join([str(val) for val in indexes]))
+            f.write("\t\tAVG\n")
+            for metr in metrics[mod]:
+                metrics[mod][metr] = [metrics[mod][metr][i] for i in sorting_idx]
+                f.write(f"\t{metr}:\t" + "\t".join([
+                    f"{val:.3f}" if not isinstance(val, str) else f"{val}\t"
+                    for val in metrics[mod][metr]
+                ]))
+                avg = sum(val for val in metrics[mod][metr] if not isinstance(val, str)) / \
+                      sum(1 for val in metrics[mod][metr] if not isinstance(val, str))
+                f.write(
+                    f"\t{avg:.3f}\n"
+                )
+        f.write("\n")
+        f.write(content)

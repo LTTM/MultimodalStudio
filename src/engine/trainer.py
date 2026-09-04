@@ -107,8 +107,7 @@ class Trainer:
                 if self.fabric.global_rank == 0:
                     writer.put_time(
                         name=EventName.TRAIN_RAYS_PER_SEC,
-                        duration=self.config.pipeline.datamanager.pixel_sampler.num_rays_per_modality * \
-                                 len(self.pipeline.datamanager.modalities) / train_t.duration,
+                        duration=self.pipeline.datamanager.pixel_sampler.num_rays_per_iteration / train_t.duration,
                         step=step,
                         avg_over_steps=True,
                     )
@@ -122,7 +121,7 @@ class Trainer:
                     writer.put_dict(name="Train Metrics Dict", scalar_dict=metrics, step=step)
 
                 losses, total_loss, metrics = self.pipeline.eval_step(step)
-                if check_step(step, self.config.steps_per_eval_batch):
+                if check_step(step, self.config.pipeline.evaluator.steps_per_eval_batch):
                     total_loss = self.fabric.all_reduce(total_loss, reduce_op="mean")
                     losses = self.fabric.all_reduce(losses, reduce_op="mean")
                     metrics = self.fabric.all_reduce(metrics, reduce_op="mean")
@@ -142,20 +141,12 @@ class Trainer:
         self.pipeline.set_eval()
         # training callbacks before the training iteration
         for callback in self.pipeline.callbacks:
-            callback.run_callback_at_location(step, location=TrainingCallbackLocation.BEFORE_TRAIN_ITERATION)
-        if view_ids is None:
-            self.pipeline.evaluator.render_all_eval_views(
-                step,
-                output_path=os.path.join(self.output_dir, 'evaluation')
-            )
-        else:
-            self.pipeline.evaluator.render_specific_views(
-                step,
-                view_ids=view_ids,
-                output_path=os.path.join(self.output_dir, 'evaluation')
-            )
-        self.pipeline.evaluator.export_mesh(step)
-        self.pipeline.evaluator.export_poses(step)
+            callback.run_callback_at_location(step - 1, location=TrainingCallbackLocation.BEFORE_TRAIN_ITERATION)
+        self.pipeline.evaluator.single_evaluation_step(
+            step - 1,
+            view_ids=view_ids,
+            output_path=os.path.join(self.output_dir, 'evaluation')
+        )
         profiler.flush_profiler(self.config.logging)
 
     @check_main_thread

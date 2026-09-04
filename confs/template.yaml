@@ -26,21 +26,6 @@ matmul_precision: high
 # Maximum number of training iterations
 max_num_iterations: 100000
 
-# Number of steps between evaluation on a random batch of rays
-steps_per_eval_batch: 200
-
-# Number of steps between evaluation on a single image
-steps_per_eval_image: 5000
-
-# Number of steps between evaluation on all images
-steps_per_eval_all_images: 50000
-
-# Number of steps between mesh export
-steps_per_export_mesh: 50000
-
-# Number of steps between pose export
-steps_per_export_poses: 10000
-
 # Number of steps between saving checkpoints
 steps_per_save: 5000
 
@@ -58,10 +43,29 @@ vis: tensorboard
 
 pipeline:
   evaluator:
+    # Number of steps between evaluation on a random batch of rays
+    steps_per_eval_batch: 200
+    # Number of steps between evaluation on a single image
+    steps_per_eval_image: 5000
+    # Number of steps between evaluation on all images
+    steps_per_eval_all_images: 50000
+    # Number of steps between mesh export
+    steps_per_export_mesh: 50000
+    # Number of steps between pose export
+    steps_per_export_poses: 10000
     # Number of rays per chunk during evaluation
     eval_num_rays_per_chunk: 2048
     # Downscale factor for rendering during evaluation (e.g., 0.25 = quarter resolution)
     rendering_scale: 0.25
+    # Whether to export the renderings aligned to the reference modality viewpoint
+    export_aligned_renderings: True
+    # Whether to export the demosaicked renderings (raw pipelines only)
+    export_demosaicked_renderings: True
+    # Whether to export extra renderings, such as the accumulation map
+    export_extra_renderings: True
+    # Modalities not to consider nor export during evaluation
+    # (e.g. angle_of_polarization, degree_of_polarization)
+    extra_modalities_to_exclude: []
     # Whether to export mesh during evaluation
     export_mesh: True
     mesh_extractor:
@@ -109,6 +113,11 @@ pipeline:
       mode: 'SO3xR3'
       # Whether to share optimization across views of the same modality
       shared_optimization: True
+      # Whether to optimize modality poses relative to a reference modality
+      relative_pose_opt: False
+      # Reference modality for relative pose optimization
+      # (if null, the first modality in modalities_to_optimize is used)
+      reference_modality: null
       # Which modalities to optimize camera poses for
       modalities_to_optimize:
         rgb: True
@@ -148,10 +157,15 @@ pipeline:
             coarse_to_fine: True
             # Grid radius (float)
             radius: 1.0
+            # Whether the grid is queried with positive coordinates only
+            positive_coords: False
           # MLP head configuration
           mlp_head:
             # Number of hidden units in the MLP head
             hidden_dim: 256
+            # Whether to apply dropout to the MLP input, and with which probability
+            input_dropout: False
+            input_dropout_probability: 0.1
             # Whether to use geometric initialization
             geometric_init: True
             # Whether to use weight normalization
@@ -185,10 +199,15 @@ pipeline:
               max_res: 1024
             coarse_to_fine: True
             radius: 1.0
+            # Whether the grid is queried with positive coordinates only
+            positive_coords: False
           # MLP head configuration
           mlp_head:
             hidden_dim: 256
             weight_norm: True
+            # Whether to apply dropout to the MLP input, and with which probability
+            input_dropout: False
+            input_dropout_probability: 0.1
             num_layers: 3
             activation: ReLU
             out_activation: ReLU
@@ -197,44 +216,52 @@ pipeline:
       direction_encoding:
         # Spherical harmonics degree for direction encoding
         degree: 4
+        # Whether to concatenate the raw direction to the encoding
+        include_input: True
       # Whether to use reflection direction in radiance computation
       use_reflection_direction: False
       # Whether to use n·v (normal dot view_dir) in radiance computation
       use_n_dot_v: True
-      # Radiance feature dimension
-      radiance_feature_dim: 256
-      # Modality heads configuration (per modality)
-      modality_heads:
-        rgb:
-          field:
-            num_layers: 3
-            hidden_dim: 64
-            out_activation: Sigmoid
-            weight_norm: True
-        infrared:
-          field:
-            num_layers: 3
-            hidden_dim: 64
-            out_activation: Sigmoid
-            weight_norm: True
-        mono:
-          field:
-            num_layers: 3
-            hidden_dim: 64
-            out_activation: Sigmoid
-            weight_norm: True
-        polarization:
-          field:
-            num_layers: 3
-            hidden_dim: 256
-            out_activation: None
-            weight_norm: True
-        multispectral:
-          field:
-            num_layers: 3
-            hidden_dim: 64
-            out_activation: Sigmoid
-            weight_norm: True
+      # Radiance latent dimension
+      radiance_latent_dim: 256
+      # Head field: decodes the radiance latent into the per-modality outputs
+      head_field:
+        # Optional shared decoder applied before the modality heads (null = none)
+        decoder: null
+        # Output dimension of that decoder, when used
+        decoder_output_dim: 16
+        # Modality heads configuration (per modality)
+        modality_heads:
+          rgb:
+            field:
+              num_layers: 3
+              hidden_dim: 64
+              out_activation: Sigmoid
+              weight_norm: True
+          infrared:
+            field:
+              num_layers: 3
+              hidden_dim: 64
+              out_activation: Sigmoid
+              weight_norm: True
+          mono:
+            field:
+              num_layers: 3
+              hidden_dim: 64
+              out_activation: Sigmoid
+              weight_norm: True
+          polarization:
+            field:
+              num_layers: 3
+              hidden_dim: 256
+              out_activation: None
+              weight_norm: True
+          multispectral:
+            field:
+              num_layers: 3
+              hidden_dim: 64
+              out_activation: Sigmoid
+              weight_norm: True
 
     background_model:
       background_field:
@@ -248,17 +275,37 @@ pipeline:
           hidden_dim: 256
           # Whether to use weight normalization
           weight_norm: True
-      # Radiance feature dimension for background
-      radiance_feature_dim: 128
-      # Modality heads for background (per modality)
+      # Radiance latent dimension for background
+      radiance_latent_dim: 128
+      # Modality heads for background (per modality); only the ones you override
       modality_heads:
         polarization:
-          # Configuration for polarization head (if needed)
-          # ...
+          field:
+            num_layers: 1
+            hidden_dim: 64
+            out_activation: None
+            weight_norm: True
 
       # Spatial distortion configuration
       spatial_distortion:
         order: inf
+
+  loss_manager:
+    # Geometry regularization losses; each one can be switched off with `enabled`
+    geometry_losses:
+      eikonal_loss:
+        enabled: True
+      curvature_loss:
+        enabled: True
+    # Per-modality reconstruction losses; each one can be switched off with `enabled`
+    radiance_losses:
+      rgb:
+        enabled: True
+      polarization:
+        enabled: True
+        # Pixels whose value exceeds this threshold are treated as saturated
+        # and excluded from the loss (polarization only)
+        saturation_value: 0.9981
 
 logging:
   # Number of steps between logging stats

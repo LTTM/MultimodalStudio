@@ -1,20 +1,40 @@
-# Copyright 2022 The Nerfstudio Team. All rights reserved.
+# Copyright 2025 Sony Group Corporation.
+# All rights reserved.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Licenced under the License reported at
+#
+#     https://github.com/LTTM/MultimodalStudio/LICENSE.txt (the "License").
+#
+# This code is a modified version of the original code available at
+#
+#     https://github.com/nerfstudio-project/nerfstudio
+#
+# Copyright 2022 The Nerfstudio Team. All rights reserved.
+# At the moment of this file creation, the original code is licensed under the Apache License,
+# Version 2.0; You may obtain a copy of the Apache License, Version 2.0, at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# The discrete_cosine_transform_dict function is a modified version of the original code available at
+#
+#     https://github.com/autonomousvision/factor-fields (commit 21ea155d70efce5f96399830cb424c444c977948)
+#
+# At the moment of this file creation, the original code is licensed under the MIT License,
+# Copyright (c) 2023 autonomousvision; a copy of the MIT License, and the list of the files it
+# applies to, is reported at
+#
+#     https://github.com/LTTM/MultimodalStudio/LICENSE_FACTOR_FIELDS.txt
+#
+# See the License for the specific language governing permissions and limitations under the License.
+#
+# Author: Federico Lincetto, Ph.D. Student at the University of Padova
 
 """ Math Helper Functions """
 from dataclasses import dataclass
 from torchtyping import TensorType
+
+import math
+import numpy as np
 
 import torch
 
@@ -26,10 +46,10 @@ def components_from_spherical_harmonics(levels: int, directions: TensorType[...,
         levels: Number of spherical harmonic levels to compute.
         directions: Spherical hamonic coefficients
     """
-    num_components = levels**2
+    num_components = (levels + 1 ) ** 2
     components = torch.zeros((*directions.shape[:-1], num_components), device=directions.device)
 
-    assert 1 <= levels <= 5, f"SH levels must be in [1,4], got {levels}"
+    assert 0 <= levels <= 4, f"SH levels must be in [1,4], got {levels}"
     assert directions.shape[-1] == 3, f"Direction input should have three dimensions. Got {directions.shape[-1]}"
 
     x = directions[..., 0]
@@ -44,39 +64,39 @@ def components_from_spherical_harmonics(levels: int, directions: TensorType[...,
     components[..., 0] = 0.28209479177387814
 
     # l1
-    if levels > 1:
-        components[..., 1] = 0.4886025119029199 * y
+    if levels > 0:
+        components[..., 1] = -0.4886025119029199 * y
         components[..., 2] = 0.4886025119029199 * z
-        components[..., 3] = 0.4886025119029199 * x
+        components[..., 3] = -0.4886025119029199 * x
 
     # l2
-    if levels > 2:
+    if levels > 1:
         components[..., 4] = 1.0925484305920792 * x * y
-        components[..., 5] = 1.0925484305920792 * y * z
-        components[..., 6] = 0.9461746957575601 * zz - 0.31539156525251999
-        components[..., 7] = 1.0925484305920792 * x * z
+        components[..., 5] = -1.0925484305920792 * y * z
+        components[..., 6] = 0.31539156525252005 * (2.0 * zz - xx - yy)
+        components[..., 7] = -1.0925484305920792 * x * z
         components[..., 8] = 0.5462742152960396 * (xx - yy)
 
     # l3
-    if levels > 3:
-        components[..., 9] = 0.5900435899266435 * y * (3 * xx - yy)
+    if levels > 2:
+        components[..., 9] = -0.5900435899266435 * y * (3 * xx - yy)
         components[..., 10] = 2.890611442640554 * x * y * z
-        components[..., 11] = 0.4570457994644658 * y * (5 * zz - 1)
-        components[..., 12] = 0.3731763325901154 * z * (5 * zz - 3)
-        components[..., 13] = 0.4570457994644658 * x * (5 * zz - 1)
+        components[..., 11] = -0.4570457994644658 * y * (4 * zz - xx - yy)
+        components[..., 12] = 0.3731763325901154 * z * (2 * zz - 3 * (xx + yy))
+        components[..., 13] = -0.4570457994644658 * x * (4 * zz - xx - yy)
         components[..., 14] = 1.445305721320277 * z * (xx - yy)
-        components[..., 15] = 0.5900435899266435 * x * (xx - 3 * yy)
+        components[..., 15] = -0.5900435899266435 * x * (xx - 3 * yy)
 
     # l4
-    if levels > 4:
+    if levels > 3:
         components[..., 16] = 2.5033429417967046 * x * y * (xx - yy)
-        components[..., 17] = 1.7701307697799304 * y * z * (3 * xx - yy)
+        components[..., 17] = -1.7701307697799304 * y * z * (3 * xx - yy)
         components[..., 18] = 0.9461746957575601 * x * y * (7 * zz - 1)
-        components[..., 19] = 0.6690465435572892 * y * (7 * zz - 3)
-        components[..., 20] = 0.10578554691520431 * (35 * zz * zz - 30 * zz + 3)
-        components[..., 21] = 0.6690465435572892 * x * z * (7 * zz - 3)
+        components[..., 19] = -0.6690465435572892 * y * z * (7 * zz - 3)
+        components[..., 20] = 0.10578554691520431 * (zz * (35 * zz - 30) + 3)
+        components[..., 21] = -0.6690465435572892 * x * z * (7 * zz - 3)
         components[..., 22] = 0.47308734787878004 * (xx - yy) * (7 * zz - 1)
-        components[..., 23] = 1.7701307697799304 * x * z * (xx - 3 * yy)
+        components[..., 23] = -1.7701307697799304 * x * z * (xx - 3 * yy)
         components[..., 24] = 0.4425326924449826 * (xx * (xx - 3 * yy) - yy * (3 * xx - yy))
 
     return components
@@ -189,3 +209,54 @@ def expected_sin(x_means: torch.Tensor, x_vars: torch.Tensor) -> torch.Tensor:
     """
 
     return torch.exp(-0.5 * x_vars) * torch.sin(x_means)
+
+
+def discrete_cosine_transform_dict(n_atoms, size, max_n_basis, dimensions=1):
+    """
+    Create a dictionary using the Discrete Cosine Transform (DCT) basis.
+    The returned dictionary will have min(n_atoms**dimensions, max_n_basis)
+    atoms. The returned DCT bases are orthonormal.
+    :param n_atoms:
+        Number of atoms (basis) in dict for each dimension
+    :param size:
+        Size of first patch
+    :param max_n_basis:
+        Max number of returned bases
+    :param dimensions:
+        DCT basis dimensions
+    :return:
+        DCT dictionary, shape [min(n_atoms**dimensions, max_n_basis), size**dimensions]
+    """
+    p = n_atoms # index of the DCT basis
+    dct = np.zeros((p, size))  # Shape [p, size], the p DCT basis of dimension size
+    for k in range(p):
+        basis = np.cos((np.arange(size) + 0.5) * k * math.pi / size)
+        if k == 0:
+            basis *= 1/np.sqrt(p)
+        else:
+            basis *= np.sqrt(2/p)
+        # Not needed for the DCT basis, as they already have zero mean
+        # if k > 0:
+        #     basis = basis - np.mean(basis)
+        dct[k] = basis # One-dimensional DTC set of bases
+    dtc_basis = np.copy(dct)
+
+    if dimensions > 1:
+        dtc_basis = np.kron(dtc_basis, dct)  # Shape [p^2, size^2], two-dimensional DCT set of bases
+    if dimensions > 2:
+        dtc_basis = np.kron(dtc_basis, dct)  # Shape [p^3, size^3], three-dimensional DCT set of bases
+    if dimensions > 3:
+        raise ValueError(f"Dimensions > 3 not supported, got {dimensions}")
+
+    if max_n_basis < dtc_basis.shape[0]:  # Select only a number equal to max_n_basis DTC basis elements
+        idx = [x[0] for x in np.array_split(np.arange(dtc_basis.shape[0]), max_n_basis)]
+        dtc_basis = dtc_basis[idx]  # Shape [max_n_basis, size^dimensions]
+
+    # Normalize DTC basis
+    for basis_elem in range(dtc_basis.shape[0]):
+        norm = np.linalg.norm(dtc_basis[basis_elem]) or 1
+        dtc_basis[basis_elem] /= norm
+
+    # dtc_basis = torch.FloatTensor(dtc_basis)
+    return dtc_basis
+

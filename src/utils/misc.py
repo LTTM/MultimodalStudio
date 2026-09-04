@@ -156,9 +156,9 @@ def normalize_frame(frame: Union[np.ndarray, torch.Tensor]):
     else:
         raise NotImplementedError(f"Normalization for {frame.dtype} not implemented. Exiting.")
 
-def check_step(step, target_step, skip_first=True):
+def check_step(step, target_step, skip_first=True, shift: int = 0):
     """Check if the current step is a multiple of the target step."""
     if skip_first:
-        return step % target_step == 0 and step != 0
+        return (step - shift) % target_step == 0 and (step - shift) != 0
     else:
-        return step % target_step == 0
+        return (step - shift) % target_step == 0

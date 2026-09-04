@@ -54,17 +54,18 @@ class SurfaceModel(torch.nn.Module):
     def __init__(
             self,
             config: SurfaceModelConfig,
+            **kwargs
     ):
         super().__init__()
         self.config = config
-        self.surface_field = self.config.surface_field.setup()
+        self.surface_field = self.config.surface_field.setup(**kwargs)
         self.volume_rendering = self.config.volume_rendering.setup()
         self.spatial_distortion = self.config.spatial_distortion.setup() \
             if self.config.spatial_distortion is not None \
             else None
 
     @profiler.time_function
-    def forward(self, ray_samples: RaySamples, return_weights=True, return_occupancy=False):
+    def forward(self, ray_samples: RaySamples, return_weights=True, return_occupancy=False, **kwargs):
         """
         Forward pass of the surface model.
         Computes the SDF, the SDF gradient and hessian, the surface normals, and the geometric feature.
@@ -77,13 +78,14 @@ class SurfaceModel(torch.nn.Module):
         inputs.requires_grad_(True)
 
         with torch.enable_grad():
-            sdf, geo_feature =  self.surface_field(inputs)
+            sdf, geo_feature =  self.surface_field(inputs, **kwargs)
 
         gradients, hessians, sampled_sdf = self.gradient(
             inputs,
             sdf,
             skip_spatial_distortion=True,
-            return_sdf=True
+            return_sdf=True,
+            **kwargs
         )
 
         if sampled_sdf is not None:
@@ -126,7 +128,7 @@ class SurfaceModel(torch.nn.Module):
 
         return outputs
 
-    def gradient(self, x, y=None, skip_spatial_distortion=False, return_sdf=False):
+    def gradient(self, x, y=None, skip_spatial_distortion=False, return_sdf=False, **kwargs):
         """compute the gradient of the SDF
         https://github.com/NVlabs/neuralangelo/blob/main/projects/neuralangelo/utils/modules.py"""
         if self.spatial_distortion is not None and not skip_spatial_distortion:
@@ -140,10 +142,10 @@ class SurfaceModel(torch.nn.Module):
                 k2 = torch.tensor([-1, -1, 1], dtype=x.dtype, device=x.device)  # [3]
                 k3 = torch.tensor([-1, 1, -1], dtype=x.dtype, device=x.device)  # [3]
                 k4 = torch.tensor([1, 1, 1], dtype=x.dtype, device=x.device)  # [3]
-                sdf1 = self.surface_field.single_output(x + k1 * delta)  # [...,1]
-                sdf2 = self.surface_field.single_output(x + k2 * delta)  # [...,1]
-                sdf3 = self.surface_field.single_output(x + k3 * delta)  # [...,1]
-                sdf4 = self.surface_field.single_output(x + k4 * delta)  # [...,1]
+                sdf1 = self.surface_field.single_output(x + k1 * delta, **kwargs)  # [...,1]
+                sdf2 = self.surface_field.single_output(x + k2 * delta, **kwargs)  # [...,1]
+                sdf3 = self.surface_field.single_output(x + k3 * delta, **kwargs)  # [...,1]
+                sdf4 = self.surface_field.single_output(x + k4 * delta, **kwargs)  # [...,1]
                 gradients = (k1 * sdf1 + k2 * sdf2 + k3 * sdf3 + k4 * sdf4) / (4.0 * delta)
                 points_sdf = torch.stack([sdf1, sdf2, sdf3, sdf4], dim=0)
                 if self.training and self.config.compute_hessian:
@@ -166,7 +168,7 @@ class SurfaceModel(torch.nn.Module):
                     dim=0,
                 )
 
-                points_sdf = self.surface_field.single_output(points.view(-1, 3)).view(6, *x.shape[:-1])
+                points_sdf = self.surface_field.single_output(points.view(-1, 3), **kwargs).view(6, *x.shape[:-1])
                 gradients = torch.stack(
                     [
                         0.5 * (points_sdf[0] - points_sdf[1]) / delta,
@@ -210,7 +212,7 @@ class SurfaceModel(torch.nn.Module):
         occupancy = self.sigmoid(-10.0 * sdf)
         return occupancy
 
-    def get_sdf(self, ray_samples: RaySamples):
+    def get_sdf(self, ray_samples: RaySamples, **kwargs):
         """Returns the signed distance function of the samples."""
         inputs = ray_samples.frustums.get_start_positions()
         inputs = inputs.view(-1, 3)
@@ -220,7 +222,7 @@ class SurfaceModel(torch.nn.Module):
         inputs.requires_grad_(True)
 
         with torch.enable_grad():
-            sdf, _ = self.surface_field(inputs)
+            sdf, _ = self.surface_field(inputs, **kwargs)
 
         sdf = sdf.view(*ray_samples.frustums.directions.shape[:-1], -1)
         return sdf
@@ -246,29 +248,23 @@ class SurfaceModel(torch.nn.Module):
         callbacks = volume_rendering_callbacks + surface_field_callbacks
 
         if self.config.use_numerical_gradients:
+            max_num_iterations = training_callback_attributes.trainer.max_num_iterations
+            model_parameters = self.get_model_parameters()
+            min_res = model_parameters["min_res"]
+            num_levels = model_parameters["num_levels"]
+            cumulative_growth_factor_list = np.cumprod(model_parameters["growth_factor_list"])
+            steps_per_level_ratio = model_parameters["steps_per_level_ratio"]
+            level_init = model_parameters["level_init"]
+            radius = model_parameters["radius"]
+            steps_per_level = int(max_num_iterations * steps_per_level_ratio)
+            steps_per_level = min(steps_per_level, int(max_num_iterations / num_levels))
 
-            min_res = training_callback_attributes.model.surface_model.surface_field.field.feature_grid.encoding.min_res
-            max_res = training_callback_attributes.model.surface_model.surface_field.field.feature_grid.encoding.max_res
-            num_levels = training_callback_attributes.model.surface_model.surface_field.field.feature_grid.encoding.num_levels
-            radius = training_callback_attributes.model.surface_model.surface_field.field.feature_grid.radius
-            steps_per_level = int(
-                training_callback_attributes.trainer.max_num_iterations * \
-                training_callback_attributes.model.surface_model.surface_field.field.feature_grid.steps_per_level_ratio
-            )
-            steps_per_level = min(
-                steps_per_level,
-                int(
-                    training_callback_attributes.trainer.max_num_iterations / \
-                    training_callback_attributes.model.surface_model.surface_field.field.feature_grid.encoding.num_levels
-                )
-            )
-            growth_factor = np.exp((np.log(max_res) - np.log(min_res)) / (num_levels - 1))
             def set_delta(step):
-                delta = 1.0 / (min_res * growth_factor ** int(step / steps_per_level))
-                delta = max(1.0 / max_res, delta)
-                self.set_numerical_gradients_delta(
-                    delta * (radius * 2.0)
-                )
+                current_level = max(level_init - 1, int(step / steps_per_level))
+                current_level = min(current_level, num_levels - 1)
+                delta = 2 * radius / (min_res * cumulative_growth_factor_list[current_level])
+                # 2 hardcoded because the scene is zero-centered with radius 1
+                self.set_numerical_gradients_delta(delta)
 
             callbacks.append(
                 TrainingCallback(

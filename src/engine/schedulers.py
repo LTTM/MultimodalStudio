@@ -324,7 +324,7 @@ class CurvatureLossWarmUpScheduler(Scheduler):
             self,
             config: CurvatureLossWarmUpSchedulerConfig,
             num_iterations: int,
-            grow_factor: float,
+            growth_factor_list: List[float],
             level_init: int,
             num_levels: int,
             steps_per_level: int,
@@ -332,6 +332,7 @@ class CurvatureLossWarmUpScheduler(Scheduler):
     ) -> None:
         self.config = config
         self.warm_up_end = int(num_iterations * config.warm_up_ratio)
+        self.cumulative_growth_factor_list = np.cumprod(growth_factor_list)
 
         def func(step):
             if step < self.warm_up_end:
@@ -340,7 +341,7 @@ class CurvatureLossWarmUpScheduler(Scheduler):
                 level = int(step / steps_per_level) + 1
                 level = max(level, level_init)
                 level = min(level, num_levels)
-                learning_factor = np.reciprocal(grow_factor ** (level - 1))
+                learning_factor = np.reciprocal(self.cumulative_growth_factor_list[level - 1])
             return learning_factor
 
         self.get_update_factor = func

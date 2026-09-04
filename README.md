@@ -1,18 +1,49 @@
-# MultimodalStudio: A Heterogeneous Sensor Dataset and Framework for Neural Rendering across Multiple Imaging Modalities
+# MultimodalStudio
+
+Official repository of two projects on neural rendering across multiple imaging modalities. They share
+the same framework, environment and dataset, and differ in the configurations and in the training
+procedure they use.
+
+## Table of Contents
+
+- [MultimodalStudio (CVPR 2025)](#multimodalstudio-a-heterogeneous-sensor-dataset-and-framework-for-neural-rendering-across-multiple-imaging-modalities)
+- [SPoILeR (ECCV 2026)](#learning-spectral-and-polarimetric-clues-for-one-to-multimodal-novel-view-synthesis)
+- [Installation](#installation)
+- [Dataset Preparation](#dataset-preparation)
+- [Run Training or Evaluation](#run-training-or-evaluation)
+- [Training SPoILeR](#training-spoiler)
+- [Compute Metrics](#compute-metrics)
+- [Reproducing Paper Results](#reproducing-paper-results)
+- [Citation](#citation)
+- [Acknowledgments](#acknowledgments)
+
+## MultimodalStudio: A Heterogeneous Sensor Dataset and Framework for Neural Rendering across Multiple Imaging Modalities
 
 [Project Page](https://lttm.github.io/MultimodalStudio) | [arXiv](https://arxiv.org/abs/2406.00000) | [Dataset](https://lttm.github.io/MultimodalStudio/pages/dataset.html)
 
 Federico Lincetto<sup>1</sup>, Gianluca Agresti<sup>2</sup>, Mattia Rossi<sup>2</sup>, Pietro Zanuttigh<sup>1</sup>  
 <sup>1</sup>University of Padova;  <sup>2</sup>Sony Europe Limited
 
-Accepted at CVPR 2025
+Accepted at **CVPR 2025**
 
-![MultimodalStudio Overview](media/teaser3.jpg)
+![MultimodalStudio Overview](media/teaser_mms.jpg)
 
-## About
-Official repository of **MultimodalStudio**, a project that includes **MMS-DATA** and **MMS-FW**. **MMS-DATA** is a geometrically calibrated multi-view multi-sensor dataset; **MMS-FW** is a multimodal NeRF framework that supports mosaicked, demosaicked, distorted, and undistorted frames of different modalities.
+**MultimodalStudio** includes **MMS-DATA** and **MMS-FW**. **MMS-DATA** is a geometrically calibrated multi-view multi-sensor dataset; **MMS-FW** is a multimodal NeRF framework that supports mosaicked, demosaicked, distorted, and undistorted frames of different modalities.
 
-We conducted in depth investigations proving that using multiple imaging modalities improves the novel view rendering quality of each involved modality. 
+We conducted in depth investigations proving that using multiple imaging modalities improves the novel view rendering quality of each involved modality.
+
+## Learning Spectral and Polarimetric Clues for One-to-Multimodal Novel View Synthesis
+
+[Project Page](https://lttm.github.io/MultimodalStudio/pages/SPoILeR.html) | [arXiv](https://arxiv.org/abs/2607.02372) | [Video](https://www.youtube.com/watch?v=6kGtjk4jHC8)
+
+Federico Lincetto<sup>1</sup>, Gianluca Agresti<sup>2</sup>, Mattia Rossi<sup>2</sup>, Piergiorgio Sartor<sup>2</sup>, Pietro Zanuttigh<sup>1</sup>  
+<sup>1</sup>University of Padova;  <sup>2</sup>Sony Europe Limited
+
+Accepted at **ECCV 2026**
+
+![SPoILeR Overview](media/teaser_spoiler.jpg)
+
+We present **SPoILeR**, a multimodal NeRF-based method that renders multi-view consistent Near-Infrared, Monochrome, Polarization, and Multispectral views of a scene captured with RGB cameras alone. A multi-scene multimodal pre-training phase lets the model learn the mutual correlation between imaging modalities; a lightweight per-scene fine-tuning phase, supervised only by RGB frames, then recovers photorealistic and multi-view consistent renderings of the modalities that were never captured for that scene.
 
 ## Installation
 
@@ -191,41 +222,131 @@ python src/launcher.py \
 
 ### Arguments:
 - `--mode`: Specify the mode of operation, either `train` or `eval`.
-- `--conf_path`: Path to the configuration file (e.g., `confs/grid_raw.yaml`).
+- `--conf_path`: Path to the configuration file (e.g., `confs/multimodalstudio/grid_raw.yaml`).
 - `--scene`: Path to the processed scene folder.
 - `--version`: (Optional) A name or identifier for the experiment version.
-- `--view_ids`: (Optional, use with --mode=eval) Specify the view indices to evaluate the model on during evaluation. If nor provided, the script will evaluate all the views specified in the `confs/<config_file>.yaml` passed to `--conf_path`.
+- `--view_ids`: (Optional, use with --mode=eval) Specify the view indices to evaluate the model on during evaluation. If nor provided, the script will evaluate all the views specified in the `confs/<subfolder>/<config_file>.yaml` passed to `--conf_path`.
 
 Example:
 ```bash
 python src/launcher.py \
     --mode train \
-    --conf_path confs/grid_raw.yaml \
+    --conf_path confs/multimodalstudio/grid_raw.yaml \
     --scene /path/to/processed/dataset/scene_name \
     --version my_first_test
 ```
 
-Configure your experiment by editing the configuration file in `./confs/<config_file>.yaml`.
+Configure your experiment by editing the configuration file in `./confs/<subfolder>/<config_file>.yaml`. The configurations of MultimodalStudio are in `./confs/multimodalstudio/`, the ones of SPoILeR in `./confs/spoiler/`.
+`./confs/template.yaml` is a fully commented template listing the available options; use it as a reference when writing your own configuration.
 For more information on how to edit the configuration files and use the modularity features, check the guide in the `docs` folder (see `docs/modularity_documentation.md`).
+
+## Training SPoILeR
+
+SPoILeR is trained in two stages: a **pre-training** shared across many scenes, followed by a
+**fine-tuning** on each target scene. Both stages use the same launcher and differ only in the
+configuration file.
+
+### 1. Pre-training
+
+Pre-training runs on several scenes at once, so `--scene` must point at the folder *containing*
+the preprocessed scenes, not at a single scene:
+
+```bash
+python src/launcher.py \
+    --mode train \
+    --conf_path confs/spoiler/spoiler_pretraining.yaml \
+    --scene /path/to/processed/dataset/scenes \
+    --version v0
+```
+
+The data manager cycles through the scenes, switching every `pipeline.steps_per_scene` iterations.
+The scenes listed in `pipeline.datamanager.eval_scene_indices` are held out and never used for
+training. The modules that are scene-specific are replicated once per scene, while the remaining
+parameters are shared: this is what the fine-tuning stage later reuses.
+
+### 2. Fine-tuning
+
+Fine-tuning adapts the pre-trained model to a single scene:
+
+```bash
+python src/launcher.py \
+    --mode train \
+    --conf_path confs/spoiler/spoiler_ft_rgb_nir.yaml \
+    --scene /path/to/processed/dataset/scenes/<scene_name> \
+    --version v0
+```
+
+The fine-tuning configurations locate the pre-trained model through `pipeline.pretrained_model_path`:
+
+```yaml
+pipeline:
+  pretrained_model_path: './output/main/scenes/multiscene_dictionary_fields_raw_model_radiance_latent/spoiler_pretraining/v0/checkpoints'
+```
+
+Since checkpoints are written to
+`output/<git_branch>/<scene_folder_name>/<method_name>/<conf_name>/<version>/checkpoints`,
+**this path must be adapted to the run produced by step 1** — in particular the branch name and the
+`--version` you passed. With `pipeline.average_multi_modules: True` the per-scene replicas stored in
+the pre-training checkpoint are averaged into a single instance before being loaded.
+
+### Available configurations
+
+| Configuration | Purpose |
+| --- | --- |
+| `spoiler_pretraining.yaml` | multi-scene pre-training |
+| `spoiler_pretraining_no_latent_regularization.yaml` | as above, with the latent regularization loss disabled |
+| `spoiler_ft_rgb.yaml`, `spoiler_ft_rgb_nir.yaml`, `spoiler_ft_rgb_pol.yaml`, `spoiler_ft_rgb_nir_pol.yaml` | fine-tuning supervised on the indicated modalities, using all the views |
+| `spoiler_ft_rgb_all_views_{nir,pol,ms}_{1,3,5,10,25}_views.yaml` | fine-tuning with all the RGB views and only N views of the second modality |
+| `spoiler_ablation_{no_latent_consistency,no_luma_consistency,no_latent_regularization}.yaml` | ablations of the SPoILeR losses, with respect to `spoiler_ft_rgb.yaml` |
+
+The modalities that receive supervision are listed in `pipeline.fine_tuning_modalities`; the
+remaining modalities are still rendered and evaluated. The few-view configurations additionally
+restrict the frames available per modality through `skip_image_indices_per_modality`, keeping all
+the RGB views and only a subset of the views of the second modality.
 
 ## Compute Metrics
 
 To evaluate the quality of rendered frames, use:
 
 ```bash
-python scripts/evaluate_average_metrics.py
+python scripts/evaluate_average_metrics.py \
+  --output_folder ./output/PLACEHOLDER/<method>/<config>/<version>/validation \
+  --gt_path <path_to_mms-data_raw>/scenes \
+  --mask_path <path_to_mms-data_masks>/masks/scenes \
+  --scene_names birdhouse bouquet fruits \
+  --num_train_iterations 100000 \
+  --is_raw
 ```
 
-Edit the script to set the correct paths for:
-- `general_path` (training output folder)
-- `consistent_mask_path` (mask output folder)
-- `source_data_path` (ground truth data)
+Main arguments:
+- `--output_folder`: the `validation` folder produced by the run. The `PLACEHOLDER` token is replaced by each scene name.
+- `--gt_path`, `--mask_path`: ground truth frames and foreground masks of MMS-DATA.
+- `--is_raw`: the rendered and ground truth frames are raw (mosaicked).
+- `--metrics_output_path`, `--file_name`: also write the report to a file (otherwise it is only printed).
 
-The script will compute PSNR, SSIM, and LPIPS metrics for each modality and print average results.
+Additional options:
+- `--multiscene`: evaluate a multi-scene (pre-training) run, whose output folder contains every scene.
+- `--masks_from_accumulation`: take the masks from the accumulation maps of a run trained on all the views, instead of the masks shipped with the dataset.
+- `--no_lpips`: skip the LPIPS computation.
+- `--no_rendered_demosaicked`: skip the metrics on the separately rendered demosaicked frames. Required when the run did not export them (`evaluator.export_demosaicked_renderings: False`).
+
+The script computes PSNR, SSIM and LPIPS for each modality on the mosaicked, the demosaicked and the
+separately rendered demosaicked frames, and prints the per-scene values along with the average over
+the scenes. Metrics that do not apply to a modality, or that were skipped, are reported as `-`.
 
 ## Reproducing Paper Results
 
-To reproduce the results reported in the MultimodalStudio paper, you can train the framework on all the scenes employing the method configurations provided in `src/configs/method_configs.py`, the config files in `confs/`, and using the data provided in the [Dataset page](https://lttm.github.io/MultimodalStudio/pages/dataset.html).
+### MultimodalStudio
+
+> **Note:** the exact revision of the code presented at CVPR 2025 is marked by the
+> `MultimodalStudio_CVPR_2025` tag, which can be checked out with
+> `git checkout MultimodalStudio_CVPR_2025`.
+> The current revision of the repository is still consistent with that work and all the
+> MultimodalStudio configurations keep working, but it also includes the changes introduced by
+> SPoILeR, some of which affect the shared modules. Please refer to the tag if you need the
+> code exactly as it was when the MultimodalStudio results were produced.
+
+To reproduce the results reported in the MultimodalStudio paper, you can train the framework on all the scenes employing the method configurations provided in `src/configs/method_configs.py`, the config files in `confs/multimodalstudio/`, and using the data provided in the [Dataset page](https://lttm.github.io/MultimodalStudio/pages/dataset.html).
 
 Below we report the average PSNR and SSIM metrics (over all scenes) for a 5-modality training, obtained by training with raw frames and multiresolution hash grid models:
 
@@ -240,13 +361,35 @@ Below we report the average PSNR and SSIM metrics (over all scenes) for a 5-moda
 **Note:**  
 These results are slightly better than those reported in the paper. This is because, for these experiments, we used an MLP to estimate the background instead of a multiresolution hash grid (to save memory space), and we employed slightly deeper modality heads. All other settings match the original paper.
 
+### SPoILeR
+
+To reproduce the results reported in the SPoILeR paper, pre-train the framework with
+`confs/spoiler/spoiler_pretraining.yaml` and then fine-tune each scene with the configurations in
+`confs/spoiler/`, as described in [Training SPoILeR](#training-spoiler).
+
+Below we report the average PSNR and SSIM over the 5 evaluation scenes (`birdhouse`, `bouquet`,
+`fruits`, `teddybear`, `toys`), obtained with `confs/spoiler/spoiler_ft_rgb.yaml`, i.e.
+fine-tuning with **RGB supervision only**: every other modality is synthesized from the multimodal
+priors learnt during pre-training, without ever being supervised on the target scene.
+
+| Modality      | PSNR (↑) | SSIM (↑) |
+|---------------|----------|----------|
+| RGB           | 30.07    | -        |
+| Mono          | 25.78    | 0.88     |
+| NIR           | 26.55    | 0.87     |
+| Polarization  | 24.25    | -        |
+| Multispectral | 25.45    | -        |
+
+Metrics are computed on the mosaicked frames, restricted to the foreground masks, with
+`scripts/evaluate_average_metrics.py` (see [Compute Metrics](#compute-metrics)).
+
 ---
 
 For more details, refer to the comments in each script and the documentation in the repository.
 
 ## Citation
 
-If you use this code or dataset, please cite:
+If you use MultimodalStudio MMS-FW (framework) or MMS-DATA (dataset), please cite:
 
 ```bibtex
 @inproceedings{lincetto2025multimodalstudio,
@@ -257,11 +400,22 @@ If you use this code or dataset, please cite:
 }
 ```
 
+If you use SPoILeR, please cite:
+
+```bibtex
+@inproceedings{lincetto2026spoiler,
+  author    = {Lincetto, Federico and Agresti, Gianluca and Rossi, Mattia and Sartor, Piergiorgio and Zanuttigh, Pietro},
+  title     = {Learning Spectral and Polarimetric Clues for One-to-Multimodal Novel View Synthesis},
+  booktitle = {Proceedings of the European Conference on Computer Vision},
+  year      = {2026},
+}
+```
+
 ## Acknowledgments
 
 This project was funded by Sony Europe Limited.
 
 
-This project was inspired by [NeRFStudio](https://nerf.studio/) and [SDFStudio](https://github.com/autonomousvision/sdfstudio).  
+This project was inspired by [NeRFStudio](https://nerf.studio/), [SDFStudio](https://github.com/autonomousvision/sdfstudio) and [Factor Fields](https://github.com/autonomousvision/factor-fields).  
 Moreover, [tiny-cuda-nn](https://github.com/NVlabs/tiny-cuda-nn) and [polanalyser](https://github.com/elerac/polanalyser) are used in this project.  
 We thank their authors for their contributions to the field and for providing excellent resources for the community.

@@ -15,7 +15,7 @@ Pixel Samplers
 import random
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import Type
+from typing import Type, Union, Dict
 
 import torch
 
@@ -26,7 +26,7 @@ class PixelSamplerConfig(InstantiateConfig):
     """General configuration for pixel samplers."""
 
     _target: Type = field(default_factory=lambda: PixelSampler)
-    num_rays_per_modality: int = 32
+    num_rays_per_modality: Union[int, Dict[str, int]] = 32
     """Number of rays to sample for each modality per batch"""
 
 @dataclass
@@ -44,6 +44,7 @@ class PixelSampler:
             self,
             config: PixelSamplerConfig,
             device=None,
+            modalities=None,
     ):
         self.config = config
         # Change seed for every device to sample different pixels
@@ -65,8 +66,13 @@ class UniformPixelSampler(PixelSampler):
             self,
             config: UniformPixelSamplerConfig,
             device,
+            modalities,
     ):
         super().__init__(config, device)
+        self.num_rays_per_modality = self.config.num_rays_per_modality
+        if isinstance(self.config.num_rays_per_modality, int):
+            self.num_rays_per_modality = {mod: self.config.num_rays_per_modality for mod in modalities}
+        self.num_rays_per_iteration = sum(self.num_rays_per_modality.values())
 
     def sample(self, frames):
         """Returns a set of random pixels for each modality and the respective radiance values."""
@@ -75,12 +81,12 @@ class UniformPixelSampler(PixelSampler):
         for mod in frames.keys():
             data = frames[mod]
             n_frames, height, width, _ = data['images'].shape
-            random_indexes = torch.randint(low=0, high=n_frames, size=(self.config.num_rays_per_modality, 1),
+            random_indexes = torch.randint(low=0, high=n_frames, size=(self.num_rays_per_modality[mod], 1),
                                            dtype=torch.int32, generator=self.generator)
             frame_indexes = data['indexes'][random_indexes]
-            pixels_x = torch.randint(low=0, high=width, size=(self.config.num_rays_per_modality, 1),
+            pixels_x = torch.randint(low=0, high=width, size=(self.num_rays_per_modality[mod], 1),
                                      dtype=torch.int32, generator=self.generator)
-            pixels_y = torch.randint(low=0, high=height, size=(self.config.num_rays_per_modality, 1),
+            pixels_y = torch.randint(low=0, high=height, size=(self.num_rays_per_modality[mod], 1),
                                      dtype=torch.int32, generator=self.generator)
             pixels_yx = torch.cat([frame_indexes, pixels_y, pixels_x], dim=-1)
             values = data['images'][random_indexes.squeeze(), pixels_yx[:, 1], pixels_yx[:, 2]]

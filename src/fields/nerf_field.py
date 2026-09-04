@@ -59,6 +59,7 @@ class NeRFField(torch.nn.Module):
             self,
             config: NeRFFieldConfig,
             radiance_output_dim: int = 3,
+            **kwargs
     ):
         super().__init__()
         self.config = config
@@ -89,7 +90,7 @@ class NeRFField(torch.nn.Module):
             )
         ).setup(input_dim=self.base_field.output_dim, output_dim=1)
 
-    def forward(self, x, viewing_direction):
+    def forward(self, x, viewing_direction, **kwargs):
         """Estimates the density and radiance of the scene given the input coordinates and viewing direction."""
         if self.config.use_position_encoding:
             x = self.position_encoding(x)

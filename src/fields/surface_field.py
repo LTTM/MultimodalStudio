@@ -67,9 +67,9 @@ class SurfaceField(torch.nn.Module):
         """Estimates the density of the scene."""
         raise NotImplementedError
 
-    def single_output(self, x):
+    def single_output(self, x, **kwargs):
         """Returns the first output of the field. This is used to return only the density value"""
-        return self.forward(x)[0]
+        return self.forward(x, **kwargs)[0]
 
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes
@@ -91,12 +91,13 @@ class SDFField(SurfaceField):
     def __init__(
             self,
             config: SDFFieldConfig,
+            **kwargs
     ):
         super().__init__(config)
 
-        self.field = self.config.field.setup(input_dim=self.input_dim, output_dim=self.output_dim)
+        self.field = self.config.field.setup(input_dim=self.input_dim, output_dim=self.output_dim, **kwargs)
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         """
         Estimates and returns the signed distance function of the scene (and the geometry feature) given the input
         coordinates.
@@ -105,7 +106,7 @@ class SDFField(SurfaceField):
         if self.config.use_position_encoding:
             x = self.position_encoding(x)
 
-        out = self.field(x)
+        out = self.field(x, **kwargs)
 
         if self.config.geo_feature_dim is not None:
             sdf, geo_feature = torch.split(out, [1, self.config.geo_feature_dim], dim=-1)

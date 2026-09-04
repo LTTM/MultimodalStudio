@@ -14,6 +14,16 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
+# The FactorFieldsCoordinateEncoding class is a modified version of the original code available at
+#
+#     https://github.com/autonomousvision/factor-fields (commit 21ea155d70efce5f96399830cb424c444c977948)
+#
+# At the moment of this file creation, the original code is licensed under the MIT License,
+# Copyright (c) 2023 autonomousvision; a copy of the MIT License, and the list of the files it
+# applies to, is reported at
+#
+#     https://github.com/LTTM/MultimodalStudio/LICENSE_FACTOR_FIELDS.txt
+#
 # See the License for the specific language governing permissions and limitations under the License.
 #
 # Author: Federico Lincetto, Ph.D. Student at the University of Padova
@@ -24,11 +34,12 @@ Encoding functions
 
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional, Type, Literal
+from typing import Optional, Type, Literal, List
 from torchtyping import TensorType
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 from field_components.base_field_component import FieldComponent, FieldComponentConfig
@@ -86,6 +97,17 @@ class DenseEncodingConfig(EncodingConfig):
     """implementation of hash encoding. Fallback to "torch" if "tcnn" not available."""
 
 @dataclass
+class CustomGridEncodingConfig(EncodingConfig):
+
+    _target: Type = field(default_factory=lambda: CustomGridEncoding)
+    features_per_level: List[int] = field(default_factory=lambda: [2, 4, 8, 10])
+    """number of features per level for multi-resolution grids"""
+    resolutions: List[int] = field(default_factory=lambda: [10, 8, 4, 2])
+    """resolutions for multi-resolution grids"""
+    interpolation: Optional[Literal["nearest", "bilinear"]] = "bilinear"
+    """interpolation override for tcnn hashgrid. Not supported for torch unless linear."""
+
+@dataclass
 class NeRFEncodingConfig(EncodingConfig):
     """Positional encoding configuration. Proposed by NeRF."""
     _target: Type = field(default_factory=lambda: NeRFEncoding)
@@ -105,6 +127,17 @@ class SHEncodingConfig(EncodingConfig):
     _target: Type = field(default_factory=lambda: SHEncoding)
     degree: int = 4
     """Degree of spherical harmonics to use for encoding"""
+    include_input: bool = False
+    """Whether to include the input in the encoding"""
+
+@dataclass
+class FactorFieldsCoordinateEncodingConfig(EncodingConfig):
+    _target: Type = field(default_factory=lambda: FactorFieldsCoordinateEncoding)
+
+    coordinate_mapping: Literal["sawtooth", "sinc", "triangle", "trigonometric", "identity"] = "sawtooth"
+    """Mapping function to use for the encoding"""
+    frequencies: List[float] = field(default_factory=lambda: [2.0, 3.2, 4.4, 5.6, 6.8, 8.0])
+    """Frequencies to use for the encoding"""
 
 class Encoding(FieldComponent):
     """Encode an input tensor. Intended to be subclassed
@@ -127,6 +160,18 @@ class Encoding(FieldComponent):
             input_tensor: the input tensor to process
         """
         raise NotImplementedError
+
+
+class Identity(Encoding):
+    """Identity encoding (Does not modify input)"""
+
+    def get_out_dim(self) -> int:
+        if self.in_dim is None:
+            raise ValueError("Input dimension has not been set")
+        return self.in_dim
+
+    def forward(self, in_tensor: TensorType["bs":..., "input_dim"]) -> TensorType["bs":..., "output_dim"]:
+        return in_tensor
 
 class NeRFEncoding(Encoding):
     """Multi-scale sinusoidal encodings.
@@ -197,6 +242,10 @@ class HashEncoding(Encoding):
         )
         self.implementation = self.config.implementation
         self.tcnn_encoding = None
+        self.num_levels = self.config.num_levels
+        self.min_res = self.config.min_res
+        self.max_res = self.config.max_res
+        self.growth_factor_list = [1] + [self.growth_factor for _ in range(self.num_levels - 1)]
 
         if self.implementation == "tcnn":
             if not TCNN_EXISTS:
@@ -219,6 +268,7 @@ class HashEncoding(Encoding):
                     n_input_dims=3,
                     encoding_config=encoding_config,
                 )
+                # self.tcnn_encoding.jit_fusion = tcnn.supports_jit_fusion()
 
         if self.implementation == "torch":
             self.hash_table_size = 2 ** self.config.log2_hashmap_size
@@ -309,6 +359,10 @@ class HashEncoding(Encoding):
             return self.tcnn_encoding(input_tensor)
         return self.pytorch_fwd(input_tensor)
 
+    def get_feature_per_level_list(self):
+        """Returns the number of features per level"""
+        return [self.config.features_per_level] * self.config.num_levels
+
 class DenseEncoding(Encoding):
     """Dense multi-resolution grid encoding"""
 
@@ -325,6 +379,10 @@ class DenseEncoding(Encoding):
         )
         self.implementation = self.config.implementation
         self.tcnn_encoding = None
+        self.num_levels = self.config.num_levels
+        self.min_res = self.config.min_res
+        self.max_res = self.config.max_res
+        self.growth_factor_list = [1] + [self.growth_factor for _ in range(self.num_levels - 1)]
 
         if self.implementation == "tcnn":
             if not TCNN_EXISTS:
@@ -346,6 +404,7 @@ class DenseEncoding(Encoding):
                     n_input_dims=3,
                     encoding_config=encoding_config,
                 )
+                # self.tcnn_encoding.jit_fusion = tcnn.supports_jit_fusion()
 
         if self.implementation == "torch":
             raise NotImplementedError
@@ -365,6 +424,56 @@ class DenseEncoding(Encoding):
             return self.tcnn_encoding(input_tensor)
         return self.pytorch_fwd(input_tensor)
 
+    def get_feature_per_level_list(self):
+        """Returns the number of features per level"""
+        return [self.config.features_per_level] * self.config.num_levels
+
+class CustomGridEncoding(Encoding):
+    """Custom grid encoding"""
+
+    def __init__(
+        self,
+        config: CustomGridEncodingConfig,
+        in_dim: int = 3,
+    ):
+
+        super().__init__(config, in_dim=in_dim)
+        self.config = config
+        self.num_levels = len(self.config.resolutions)
+        self.min_res = min(self.config.resolutions)
+        self.max_res = max(self.config.resolutions)
+        self.growth_factor_list = [1] + [self.config.resolutions[i+1] / self.config.resolutions[i] for i in range(self.num_levels - 1)]
+
+        if len(self.config.resolutions) != len(self.config.features_per_level):
+            raise ValueError(
+                f"Number of features per level {len(self.config.features_per_level)} does not match number of levels {len(self.config.resolutions)}"
+            )
+
+        self.grid = nn.ParameterList([])
+        for dimension, resolution in zip(self.config.features_per_level, self.config.resolutions):
+            current_level = nn.Parameter(torch.rand(([1, dimension] + [resolution] * in_dim)))
+            self.grid.append(current_level)
+
+    def forward(self, in_tensor: TensorType["bs":..., "input_dim"]) -> TensorType["bs":..., "output_dim"]:
+        output = []
+        for i in range(len(self.grid)):
+            samples = F.grid_sample(
+                self.grid[i],
+                in_tensor[None, None, None, :, :, i],
+                align_corners=True,
+                mode=self.config.interpolation,
+                padding_mode="border",
+            ).view(-1, in_tensor.shape[0]).T
+            output.append(samples)
+        output = torch.cat(output, dim=1)
+        return output
+
+    def get_out_dim(self) -> int:
+        return sum(self.config.features_per_level)
+
+    def get_feature_per_level_list(self):
+        return self.config.features_per_level
+
 class SHEncoding(Encoding):
     """Spherical harmonic encoding"""
 
@@ -374,6 +483,7 @@ class SHEncoding(Encoding):
         in_dim: int = 3,
     ):
         super().__init__(config, in_dim=in_dim)
+        self.config = config
         self.direction_encoding = tcnn.Encoding(
             n_input_dims=in_dim,
             encoding_config={
@@ -381,12 +491,56 @@ class SHEncoding(Encoding):
                 "degree": self.config.degree + 1,
             },
         )
+        # self.direction_encoding.jit_fusion = tcnn.supports_jit_fusion()
 
     def get_out_dim(self) -> int:
         """Calculates output dimension of encoding."""
-        return (self.config.degree + 1)**2
+        return (self.config.degree + 1)**2 if not self.config.include_input else (self.config.degree + 1)**2 + self.input_dim
 
     def forward(self, input_tensor: TensorType["bs":..., "input_dim"]) -> TensorType["bs":..., "output_dim"]:
         """Calculates spherical harmonic encoding."""
         input_tensor = (input_tensor + 1) / 2 # Needed due to tiny-cuda-nn implementation
-        return self.direction_encoding(input_tensor)
+        output = self.direction_encoding(input_tensor)
+        if self.config.include_input:
+            output = torch.cat([input_tensor, output], dim=-1)
+        return output
+
+class FactorFieldsCoordinateEncoding(Encoding):
+    """
+    Factor Fields basis encoding
+    Expects input tensor to be in the range [-1, 1] or scene_box must be provided
+    """
+    def __init__(self,
+        config: FactorFieldsCoordinateEncodingConfig,
+        input_dim=3,
+        aabb=None,
+    ) -> None:
+
+        super().__init__(config=config, in_dim=input_dim)
+        self.config = config
+        self.frequencies = torch.tensor(self.config.frequencies)
+        self.aabb = aabb if aabb is not None else torch.tensor([[-1,-1,-1],[1,1,1]])
+
+    def forward(self, positions):
+        aabb_size = max(self.aabb[1] - self.aabb[0])
+        scale = aabb_size[..., None] / self.frequencies
+        if self.config.coordinate_mapping == 'triangle':
+            pts_local = (positions - self.aabb[0]).unsqueeze(-1) % scale
+            pts_local_int = ((positions - self.aabb[0]).unsqueeze(-1) // scale) % 2
+            pts_local = pts_local / (scale / 2) - 1
+            pts_local = torch.where(pts_local_int == 1, -pts_local, pts_local)
+        elif self.config.coordinate_mapping == 'sawtooth':
+            pts_local = (positions - self.aabb[0])[..., None] % scale
+            pts_local = pts_local / (scale / 2) - 1
+            pts_local = pts_local.clamp(-1., 1.)
+        elif self.config.coordinate_mapping == 'sinc':
+            pts_local = torch.sin((positions - self.aabb[0])[..., None] / (scale / np.pi) - np.pi / 2)
+        elif self.config.coordinate_mapping == 'trigonometric':
+            pts_local = (positions - self.aabb[0])[..., None] / scale * 2 * np.pi
+            pts_local = torch.cat((torch.sin(pts_local), torch.cos(pts_local)), dim=-1)
+        elif self.config.coordinate_mapping == 'identity':
+            pts_local = (positions - self.aabb[0]).unsqueeze(-1) / (scale / 2) - 1
+            # pts_local = pts_local.clamp(-1., 1.)
+        else:
+            raise ValueError(f"Unknown mapping {self.config.coordinate_mapping}")
+        return pts_local

@@ -14,12 +14,13 @@ MLP network.
 """
 
 from dataclasses import dataclass, field
-from typing import Type, Optional, Tuple, Literal
+from typing import Type, Optional, Tuple, Literal, List, Union
 from torchtyping import TensorType
 
 import numpy as np
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 from field_components.base_field_component import FieldComponent, FieldComponentConfig
 
@@ -36,7 +37,7 @@ class MLPConfig(FieldComponentConfig):
     _target: Type = field(default_factory=lambda: MLP)
     num_layers: int = 8
     """Number of layers"""
-    hidden_dim: int = 128
+    hidden_dim: Union[int, List[int]] = 128
     """Hidden dimension of each layer"""
     weight_norm: bool = True
     """Whether to use weight normalization"""
@@ -52,6 +53,10 @@ class MLPConfig(FieldComponentConfig):
     """Whether to use geometric initialization"""
     geometric_init_bias: float = 0.5
     """Defines the radius of the sphere centered in the origin at initialization."""
+    input_dropout: bool = False
+    """Dropout option for the input tensor"""
+    input_dropout_probability: float = 0.1
+    """Input Dropout Probability"""
 
 @dataclass
 class FullyFusedMLPConfig(FieldComponentConfig):
@@ -104,6 +109,7 @@ class MLP(FieldComponent):
             config: MLPConfig,
             input_dim: int = None,
             output_dim: int = None,
+            **kwargs
     ):
         """Initialize multi-layer perceptron."""
         self.config = config
@@ -113,12 +119,18 @@ class MLP(FieldComponent):
             self.output_dim = self.config.hidden_dim
 
         dims = []
-        for i in range(self.config.num_layers - 1):
-            if i + 1 in self.config.skip_connections:
-                dims.append(self.config.hidden_dim + self.input_dim)
-            else:
-                dims.append(self.config.hidden_dim)
-        dims = [self.input_dim] + dims + [self.output_dim]
+        if isinstance(self.config.hidden_dim, int):
+            for i in range(self.config.num_layers - 1):
+                if i + 1 in self.config.skip_connections:
+                    dims.append(self.config.hidden_dim + self.input_dim)
+                else:
+                    dims.append(self.config.hidden_dim)
+            dims = [self.input_dim] + dims + [self.output_dim]
+        elif isinstance(self.config.hidden_dim, list):
+            assert len(self.config.hidden_dim) == self.config.num_layers - 1, "Hidden dimension list must match number of layers"
+            dims = [self.input_dim] + self.config.hidden_dim + [self.output_dim]
+        else:
+            raise ValueError("Hidden dimension must be an int or a list of ints")
 
         layers = []
 
@@ -149,7 +161,7 @@ class MLP(FieldComponent):
             if self.config.out_activation != "None" \
             else None
 
-    def forward(self, input_tensor: TensorType["bs":..., "in_dim"]) -> TensorType["bs":..., "out_dim"]:
+    def forward(self, input_tensor: TensorType["bs":..., "in_dim"], **kwargs) -> TensorType["bs":..., "out_dim"]:
         """Process input with a multilayer perceptron.
 
         Args:
@@ -159,6 +171,10 @@ class MLP(FieldComponent):
             MLP network output
         """
         x = input_tensor
+
+        if self.config.input_dropout and self.training:
+            input_tensor = F.dropout(input_tensor, p=self.config.input_dropout_probability)
+
         for i, layer in enumerate(self.layers):
             # as checked in `build_nn_modules`, 0 should not be in `_skip_connections`
             if i in self.config.skip_connections:
@@ -206,7 +222,7 @@ class MLP(FieldComponent):
     def weight_norm(self):
         """Apply weight normalization to the layers of the MLP."""
         for l in range(len(self.layers)):
-            self.layers[l] = torch.nn.utils.parametrizations.weight_norm(self.layers[l])
+            self.layers[l] = torch.nn.utils.weight_norm(self.layers[l])
 
 class FullyFusedMLP(FieldComponent):
     """FullyFusedMLP implementation of tiny-cuda-nn"""

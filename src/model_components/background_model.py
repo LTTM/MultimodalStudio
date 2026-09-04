@@ -39,7 +39,7 @@ class BackgroundModelConfig(InstantiateConfig):
     """Modality heads config. These are the fields that estimate the multimodal radiance of the scene"""
     spatial_distortion: Union[None, SpatialDistortionConfig] = None
     """Spatial distortion module to use"""
-    radiance_feature_dim: int = 256
+    radiance_latent_dim: int = 256
     """Dimension of radiance feature to pass to the modality heads"""
 
 class BackgroundModel(torch.nn.Module):
@@ -54,6 +54,7 @@ class BackgroundModel(torch.nn.Module):
             self,
             config: BackgroundModelConfig,
             modalities: Dict[str, int],
+            **kwargs
     ):
         super().__init__()
         self.config = config
@@ -61,16 +62,17 @@ class BackgroundModel(torch.nn.Module):
         self.spatial_distortion = self.config.spatial_distortion.setup() \
             if self.config.spatial_distortion is not None \
             else None
-        self.background_field = self.config.background_field.setup(radiance_output_dim=self.config.radiance_feature_dim)
+        self.background_field = self.config.background_field.setup(radiance_output_dim=self.config.radiance_latent_dim, **kwargs)
         self.modality_heads = torch.nn.ParameterDict({
             mod: self.config.modality_heads.get(mod, ModalityHeadConfig()).setup(
-                input_dim=self.config.radiance_feature_dim,
-                output_dim=self.modalities[mod]
+                input_dim=self.config.radiance_latent_dim,
+                output_dim=self.modalities[mod],
+                **kwargs
             ) for mod in self.modalities
         })
 
     @profiler.time_function
-    def forward(self, ray_samples: RaySamples):
+    def forward(self, ray_samples: RaySamples, **kwargs):
         """
         Estimates the density and the radiance of points outside the region of interest of the scene.
         it computes and returns the pixel radiance by integrating the radiance along the rays
@@ -90,7 +92,7 @@ class BackgroundModel(torch.nn.Module):
         if self.spatial_distortion is not None:
             inputs = self.spatial_distortion(inputs)
 
-        density, radiance_feature = self.background_field(inputs, directions)
+        density, radiance_feature = self.background_field(inputs, directions, **kwargs)
 
         density = density.view(*ray_samples.frustums.directions.shape[:-1], -1)
         alphas = ray_samples.get_alphas(density)
@@ -103,7 +105,8 @@ class BackgroundModel(torch.nn.Module):
             radiance_output = self.modality_heads[mod](
                 radiance_feature,
                 directions=directions,
-                up_directions=up_directions
+                up_directions=up_directions,
+                **kwargs
             )
             radiance = radiance_output.view(*ray_samples.frustums.directions.shape[:-1], -1)
             outputs[mod] = torch.sum(weights * radiance, dim=1)

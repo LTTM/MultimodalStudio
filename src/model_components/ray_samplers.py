@@ -480,7 +480,7 @@ class NeuSSampler(Sampler):
             while total_iters < self.config.num_upsample_steps:
 
                 with torch.no_grad():
-                    new_sdf = sdf_fn(new_samples)
+                    new_sdf = sdf_fn(new_samples, **kwargs)
 
                 # merge sdf predictions
                 if sorted_index is not None:

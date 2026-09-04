@@ -24,7 +24,6 @@ from field_components.base_field_component import FieldComponent, FieldComponent
 from field_components.encodings import EncodingConfig
 from field_components.mlp import MLPConfig, FullyFusedMLPConfig
 
-
 @dataclass
 class FeatureGridConfig(FieldComponentConfig):
     """Feature grid configuration."""
@@ -40,6 +39,8 @@ class FeatureGridConfig(FieldComponentConfig):
     """Initial level for training"""
     radius: float = 1
     """Radius to rescale the input in the feature grid"""
+    positive_coords: bool = True
+    """Whether to rescale the coordinates to be [0, 1]. Otherwise they are scaled to be in [-1, 1]"""
 
 @dataclass
 class FeatureGridAndMLPConfig(FieldComponentConfig):
@@ -71,21 +72,25 @@ class FeatureGrid(FieldComponent):
         self.encoding = self.config.encoding.setup(in_dim = 3)
         self.output_dim = self.encoding.get_out_dim()
         self.hash_encoding_mask = torch.ones(
-            self.config.encoding.num_levels * self.config.encoding.features_per_level,
+            self.output_dim,
             dtype=torch.float32
-        )
+        ) #TODO: instead of output_dim there was self.config.encoding.num_levels * self.config.encoding.features_per_level
+        self.normalize_fn = lambda x: (x + self.radius) / (2 * self.radius) \
+            if self.config.positive_coords \
+            else x / self.radius
 
-    def forward(self, input_tensor: TensorType["bs":..., "input_dim"]) -> TensorType["bs":..., "output_dim"]:
+    def forward(self, input_tensor: TensorType["bs":..., "input_dim"], **kwargs) -> TensorType["bs":..., "output_dim"]:
         """Extract features from input tensor."""
-        rescaled_input = (input_tensor + self.radius) / (2 * self.radius)
-        features = self.encoding(rescaled_input)
+        normalized_input = self.normalize_fn(input_tensor)
+        features = self.encoding(normalized_input)
         features = features * self.hash_encoding_mask
         return features
 
     def update_mask(self, level: int):
         """Update the coarse-to-fine mask"""
         self.hash_encoding_mask[:] = 1.0
-        self.hash_encoding_mask[level * self.config.encoding.features_per_level:] = 0
+        n_feature_current_level = sum(self.encoding.get_feature_per_level_list()[:level])
+        self.hash_encoding_mask[n_feature_current_level:] = 0
 
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes
@@ -100,11 +105,11 @@ class FeatureGrid(FieldComponent):
                 )
                 steps_per_level = min(
                     steps_per_level,
-                    int(training_callback_attributes.trainer.max_num_iterations / self.config.encoding.num_levels)
+                    int(training_callback_attributes.trainer.max_num_iterations / self.encoding.num_levels)
                 )
                 level = int(step / steps_per_level) + 1
                 level = max(level, self.config.level_init)
-                level = min(level, self.config.encoding.num_levels)
+                level = min(level, self.encoding.num_levels)
                 self.update_mask(level)
 
             callbacks.append(
@@ -119,11 +124,13 @@ class FeatureGrid(FieldComponent):
     def get_model_parameters(self):
         """Returns the model parameters."""
         parameters = {
-            "num_levels": self.config.encoding.num_levels,
-            "min_res": self.config.encoding.min_res,
-            "max_res": self.config.encoding.max_res,
+            "num_levels": self.encoding.num_levels,
+            "min_res": self.encoding.min_res,
+            "max_res": self.encoding.max_res,
+            "growth_factor_list": self.encoding.growth_factor_list,
             "steps_per_level_ratio": self.config.steps_per_level_ratio,
             "level_init": self.config.level_init,
+            "radius": self.config.radius,
         }
         return parameters
 
@@ -138,6 +145,7 @@ class FeatureGridAndMLP(FieldComponent):
             config: FeatureGridAndMLPConfig,
             input_dim: int = None,
             output_dim: int = None,
+            **kwargs
     ):
         """Initialize multi-layer perceptron."""
         super().__init__(config, input_dim=input_dim, output_dim=output_dim)
@@ -150,7 +158,7 @@ class FeatureGridAndMLP(FieldComponent):
         self.mlp_head = self.config.mlp_head.setup(input_dim=mlp_input_dim, output_dim=output_dim)
         self.output_dim = self.mlp_head.get_out_dim()
 
-    def forward(self, input_tensor: TensorType["bs":..., "input_dim"]) -> TensorType["bs":..., "output_dim"]:
+    def forward(self, input_tensor: TensorType["bs":..., "input_dim"], **kwargs) -> TensorType["bs":..., "output_dim"]:
         """Extract features from input tensor and pass them through MLP."""
         auxiliary_input = None
         if input_tensor.shape[-1] > 3:

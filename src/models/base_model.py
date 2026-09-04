@@ -59,6 +59,7 @@ class BaseModel(torch.nn.Module):
             config: BaseModelConfig,
             scene_box: SceneBox,
             modalities: Dict[str, int],
+            **kwargs
     ):
         super().__init__()
         self.config = config
@@ -66,21 +67,23 @@ class BaseModel(torch.nn.Module):
         self.ray_sampler = self.config.ray_sampler.setup()
         self.collider = ColliderInstancer(scene_box)
 
-        self.surface_model = self.config.surface_model.setup()
+        self.surface_model = self.config.surface_model.setup(**kwargs)
         self.radiance_model = self.config.radiance_model.setup(
             modalities=modalities,
+            **kwargs
         )
 
         if self.config.use_background_model:
             self.background_ray_sampler = self.config.background_ray_sampler.setup()
             self.background_model = self.config.background_model.setup(
                 modalities=modalities,
+                **kwargs
             )
 
         self.renderer = self.config.renderer.setup()
 
     @profiler.time_function
-    def forward(self, ray_bundles):
+    def forward(self, ray_bundles, **kwargs):
         """Estimates the radiance and geometry values for each ray in the batch"""
         # Sample points along rays
         colliding_rays_masks = self.collider.update_ray_bundles(ray_bundles)
@@ -91,7 +94,7 @@ class BaseModel(torch.nn.Module):
             else None
             for mod, ray_bundle in ray_bundles.items()
         }
-        ray_sampler_output = self.ray_sampler(masked_ray_bundles, sdf_fn=self.surface_model.get_sdf)
+        ray_sampler_output = self.ray_sampler(masked_ray_bundles, sdf_fn=self.surface_model.get_sdf, **kwargs)
         samples_per_modality = ray_sampler_output["ray_samples_per_modality"]
         background_samples_per_modality = {}
         if self.config.use_background_model:
@@ -111,7 +114,7 @@ class BaseModel(torch.nn.Module):
 
             background_outputs = None
             if self.config.use_background_model:
-                background_outputs = self.background_model(background_samples)
+                background_outputs = self.background_model(background_samples, **kwargs)
 
             if samples.shape[0] == 0 and background_outputs is not None:
                 background_outputs.update({
@@ -119,15 +122,17 @@ class BaseModel(torch.nn.Module):
                     "depth": torch.zeros(background_samples.shape[0], 1, device=mask.device),
                     "accumulation": torch.zeros(background_samples.shape[0], 1, device=mask.device),
                 })
+                background_outputs.update(self.radiance_model.additional_background_output(background_samples))
                 outputs[mod] = background_outputs
             else:
                 # Get weights
-                geometry_outputs = self.surface_model(samples)
+                geometry_outputs = self.surface_model(samples, **kwargs)
 
                 radiance_outputs = self.radiance_model(
                     ray_samples=samples,
                     normals=geometry_outputs["normals"].detach(),
                     geo_feature=geometry_outputs["geo_feature"],
+                    **kwargs
                 )
 
                 renderer_input = {}
@@ -157,6 +162,16 @@ class BaseModel(torch.nn.Module):
                     if key != "ray_samples_per_modality"
                 })
                 outputs[mod] = modality_outputs
+
+                # for key in ["radiance_latent", "estimated_radiance_latent"]:
+                #     if key in radiance_outputs:
+                #         latent_list = outputs.get(key, [])
+                #         latent_list.append(radiance_outputs[key])
+                #         outputs[key] = latent_list
+
+        # for key in ["radiance_latent", "estimated_radiance_latent"]:
+        #     if key in outputs:
+        #         outputs[key] = torch.cat(outputs[key], dim=0)
 
         return outputs
 
@@ -193,7 +208,7 @@ class BaseModel(torch.nn.Module):
         # Surface and radiance model grids should have the same resolutions and number of levels
         parameters = {}
         parameters.update(self.surface_model.get_model_parameters())
-        # parameters.update(self.radiance_model.get_model_parameters())
+        # parameters.update(self.radiance_model.get_model_parameters()) #TODO: check this, both surface and radiance params present but overwriting
         if self.config.use_background_model:
             parameters.update(self.background_model.get_model_parameters())
         return parameters

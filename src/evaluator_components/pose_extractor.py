@@ -79,7 +79,8 @@ class PoseExtractor:
         """Export the camera poses to disk as ply point cloud."""
         output_path = os.path.join(self.output_path, "camera_poses")
         os.makedirs(output_path, exist_ok=True)
-        output_path = os.path.join(output_path, f"poses_{step:08}.ply")
+        scene_name = self.dataset.data_dir.split("/")[-1]
+        output_path = os.path.join(output_path, f"poses_{step:08}_{scene_name}.ply")
 
         pointcloud = []
         colors = []

@@ -225,7 +225,7 @@ class SemanticRenderer(BaseRenderer):
         weights: TensorType["bs":..., "num_samples", 1],
     ) -> TensorType["bs":..., "num_classes"]:
         """Calculate semantics along the ray."""
-        sem = torch.sum(weights * semantics, dim=-2)
+        sem = torch.sum(weights * semantics, dim=-2).to(semantics.dtype)
         return sem
 
 class NormalsRenderer(BaseRenderer):

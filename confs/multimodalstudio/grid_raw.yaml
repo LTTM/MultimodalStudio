@@ -11,21 +11,21 @@
 
 ---
 
-method: grid
+method: grid_raw
 
 n_gpu: 1
 mixed_precision: True
 matmul_precision: high
 max_num_iterations: 100000
-steps_per_eval_batch: 200
-steps_per_eval_image: 5000
-steps_per_eval_all_images: 50000
-steps_per_export_mesh: 50000
-steps_per_export_poses: 10000
 steps_per_save: 5000
 
 pipeline:
   evaluator:
+    steps_per_eval_batch: 200
+    steps_per_eval_image: 5000
+    steps_per_eval_all_images: 50000
+    steps_per_export_mesh: 50000
+    steps_per_export_poses: 10000
     eval_num_rays_per_chunk: 2048
     rendering_scale: 0.25
     export_mesh: True

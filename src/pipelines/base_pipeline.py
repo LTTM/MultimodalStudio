@@ -156,26 +156,8 @@ class BasePipeline:
         """Performs an evaluation step and computes the losses and the metrics"""
         self.set_eval()
         losses, total_loss, metrics = None, None, None
-        if check_step(step, self.trainer_config.steps_per_eval_batch):
-            (pixel_coords, pixels) = next(self.datamanager.iter_eval_dataloader)
-            ray_bundles = self.datamanager.eval_ray_generator(pixel_coords)
-
-            with torch.no_grad():
-                outputs = self.model.module(ray_bundles)
-
-            losses, total_loss = self.loss_manager.compute_loss(outputs, pixels, pixel_coords, step, eval_step=True)
-            metrics = compute_metrics(outputs, pixels, modalities=self.datamanager.modalities, eval_step=True)
-
-        if check_step(step, self.trainer_config.steps_per_eval_image, skip_first=True) and self.global_rank == 0:
-            self.evaluator.render_train_view(step)
-            self.evaluator.render_eval_view(step)
-        if check_step(step, self.trainer_config.steps_per_eval_all_images, skip_first=True) and self.global_rank == 0:
-            self.evaluator.render_all_eval_views(step)
-        if check_step(step, self.trainer_config.steps_per_export_mesh, skip_first=True) and self.global_rank == 0:
-            self.evaluator.export_mesh(step)
-        if check_step(step, self.trainer_config.steps_per_export_poses, skip_first=False) and self.global_rank == 0:
-            self.evaluator.export_poses(step)
-
+        if self.fabric.global_rank == 0:
+            losses, total_loss, metrics = self.evaluator.evaluation_step(step)
         self.set_train()
         return losses, total_loss, metrics
 
